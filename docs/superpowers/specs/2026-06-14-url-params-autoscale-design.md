@@ -28,19 +28,19 @@ Out of scope (fast-follow): knockout/bracket mode; a `title`/header text paramet
 
 Pure function `parseConfig(search: string): DashboardConfig`. Reads `window.location.search` once at startup, validates, clamps, and falls back to defaults. Being pure, it is developed with TDD (Vitest).
 
-| Param | Type / values | Default | Notes |
-|-------|---------------|---------|-------|
-| `groups` | CSV `A`–`L` (case-insensitive) | all 12 | Invalid letters dropped; empty → all |
-| `cols` | int ≥ 1 | auto | If omitted, derived from group count |
-| `rows` | int ≥ 1 | auto | `ceil(n / cols)` when cols given |
-| `detail` | `compact` \| `full` | `full` | compact = Rank, Flag, Team, GD, Pts |
-| `scores` | `on` \| `off` | `on` | Hides footer feed when off |
-| `upcoming` | int ≥ 0 | 5 | Max upcoming feed items |
-| `finished` | int ≥ 0 | 8 | Max finished feed items |
-| `refresh` | int seconds | 90 | Clamped to min 30 to protect the source API |
-| `theme` | `dark` \| `light` | `dark` | Sets `data-theme` on root; CSS vars |
-| `highlight` | CSV FIFA codes | none | e.g. `USA,MEX,CAN`; matching rows emphasized |
-| `fit` | `on` \| `off` | `on` | Auto-scale toggle |
+| Param       | Type / values                  | Default | Notes                                        |
+| ----------- | ------------------------------ | ------- | -------------------------------------------- |
+| `groups`    | CSV `A`–`L` (case-insensitive) | all 12  | Invalid letters dropped; empty → all         |
+| `cols`      | int ≥ 1                        | auto    | If omitted, derived from group count         |
+| `rows`      | int ≥ 1                        | auto    | `ceil(n / cols)` when cols given             |
+| `detail`    | `compact` \| `full`            | `full`  | compact = Rank, Flag, Team, GD, Pts          |
+| `scores`    | `on` \| `off`                  | `on`    | Hides footer feed when off                   |
+| `upcoming`  | int ≥ 0                        | 5       | Max upcoming feed items                      |
+| `finished`  | int ≥ 0                        | 8       | Max finished feed items                      |
+| `refresh`   | int seconds                    | 90      | Clamped to min 30 to protect the source API  |
+| `theme`     | `dark` \| `light`              | `dark`  | Sets `data-theme` on root; CSS vars          |
+| `highlight` | CSV FIFA codes                 | none    | e.g. `USA,MEX,CAN`; matching rows emphasized |
+| `fit`       | `on` \| `off`                  | `on`    | Auto-scale toggle                            |
 
 Robustness rules:
 

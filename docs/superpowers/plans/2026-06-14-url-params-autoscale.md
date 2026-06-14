@@ -9,6 +9,7 @@
 **Tech Stack:** TypeScript, Vite, vanilla DOM. Vitest (jsdom) for unit tests, Playwright for e2e. Prettier for formatting (`pnpm format`).
 
 **Conventions (match existing code):**
+
 - Unit tests live in `tests/*.test.ts`, import `{ describe, it, expect }` explicitly from `vitest`.
 - e2e specs live in `e2e/*.spec.ts`, import from `@playwright/test`.
 - 2-space indent, double quotes, trailing commas (Prettier defaults already in repo).
@@ -21,6 +22,7 @@
 ## File Structure
 
 **Create:**
+
 - `src/config.ts` — `DashboardConfig` interface, `parseConfig(search)`, `deriveGrid(n, cols, rows)`. Pure, no DOM.
 - `src/fit.ts` — `binarySearchLargest(...)` (pure) and `fitToViewport(app)` (DOM measurement loop).
 - `tests/config.test.ts` — tests for `parseConfig` and `deriveGrid`.
@@ -28,6 +30,7 @@
 - `e2e/params.spec.ts` — e2e for params + no-scroll fit.
 
 **Modify:**
+
 - `src/standings.ts` — add `filterGroups(...)`; make `buildScoreFeed` accept limits.
 - `src/render.ts` — `renderStandings` accepts `{ detail, highlight }`; column set + highlight class.
 - `src/main.ts` — parse config, apply theme/fit/grid/scores, wire refresh interval + resize fit.
@@ -39,6 +42,7 @@
 ## Task 1: Config types + `parseConfig`
 
 **Files:**
+
 - Create: `src/config.ts`
 - Test: `tests/config.test.ts`
 
@@ -200,11 +204,14 @@ function csvCodes(raw: string | null): string[] {
 export function parseConfig(search: string): DashboardConfig {
   const p = new URLSearchParams(search);
 
-  const groupLetters = csvCodes(p.get("groups")).filter((s) => /^[A-L]$/.test(s));
+  const groupLetters = csvCodes(p.get("groups")).filter((s) =>
+    /^[A-L]$/.test(s),
+  );
   const groups = [...new Set(groupLetters)];
 
   const refreshRaw = p.get("refresh");
-  const refreshSec = refreshRaw === null ? null : Number.parseInt(refreshRaw, 10);
+  const refreshSec =
+    refreshRaw === null ? null : Number.parseInt(refreshRaw, 10);
   const refreshMs =
     refreshSec !== null && Number.isInteger(refreshSec)
       ? Math.max(MIN_REFRESH_MS, refreshSec * 1000)
@@ -243,6 +250,7 @@ git commit -m "feat: add parseConfig for URL query parameters"
 ## Task 2: `deriveGrid` helper
 
 **Files:**
+
 - Modify: `src/config.ts`
 - Test: `tests/config.test.ts`
 
@@ -318,6 +326,7 @@ git commit -m "feat: add deriveGrid for configurable grid dimensions"
 ## Task 3: `binarySearchLargest` (auto-scale math)
 
 **Files:**
+
 - Create: `src/fit.ts`
 - Test: `tests/fit.test.ts`
 
@@ -401,6 +410,7 @@ git commit -m "feat: add binarySearchLargest for auto-scale fitting"
 ## Task 4: Group filtering + configurable feed limits
 
 **Files:**
+
 - Modify: `src/standings.ts`
 - Test: `tests/standings.test.ts`
 
@@ -468,7 +478,10 @@ describe("buildScoreFeed limits", () => {
         fg(`u${i}`, { kickoff: new Date(2026, 5, 15, 12 + i, 0) }),
       ),
       ...Array.from({ length: 6 }, (_, i) =>
-        fg(`f${i}`, { finished: true, kickoff: new Date(2026, 5, 10 + i, 12, 0) }),
+        fg(`f${i}`, {
+          finished: true,
+          kickoff: new Date(2026, 5, 10 + i, 12, 0),
+        }),
       ),
     ];
     const feed = buildScoreFeed(games, now, { maxUpcoming: 2, maxFinished: 3 });
@@ -515,11 +528,11 @@ export function buildScoreFeed(
 and the return:
 
 ```ts
-  return [
-    ...live,
-    ...finished.slice(0, maxFinished),
-    ...upcoming.slice(0, maxUpcoming),
-  ];
+return [
+  ...live,
+  ...finished.slice(0, maxFinished),
+  ...upcoming.slice(0, maxUpcoming),
+];
 ```
 
 - [ ] **Step 4: Run test to verify it passes**
@@ -539,6 +552,7 @@ git commit -m "feat: add group filtering and configurable feed limits"
 ## Task 5: Render column detail + highlight
 
 **Files:**
+
 - Modify: `src/render.ts`
 - Test: `tests/render.test.ts`
 
@@ -561,9 +575,9 @@ describe("renderStandings options", () => {
     const a = container.querySelector('[data-group="A"]')!;
     const headers = [...a.querySelectorAll("th")].map((th) => th.textContent);
     expect(headers).toEqual(["#", "", "Team", "GD", "Pts"]);
-    expect(a.querySelector('[data-team="T1"]')?.querySelectorAll("td")).toHaveLength(
-      5,
-    );
+    expect(
+      a.querySelector('[data-team="T1"]')?.querySelectorAll("td"),
+    ).toHaveLength(5);
   });
 
   it("adds a highlight class to rows whose code is listed", () => {
@@ -690,6 +704,7 @@ git commit -m "feat: support compact column detail and row highlighting"
 ## Task 6: CSS — theme, configurable grid, fit-mode, highlight
 
 **Files:**
+
 - Modify: `src/styles.css`
 
 No unit test (pure styling; verified by e2e in Task 9 and manual review).
@@ -811,6 +826,7 @@ git commit -m "feat: add theme, configurable grid, fit-mode, and highlight style
 ## Task 7: `fitToViewport` DOM routine
 
 **Files:**
+
 - Modify: `src/fit.ts`
 
 Covered by e2e (Task 9); jsdom has no layout engine so this is not unit-tested.
@@ -834,8 +850,7 @@ export function fitToViewport(app: HTMLElement): void {
   const fits = (fontPx: number): boolean => {
     root.style.fontSize = `${fontPx}px`;
     return (
-      app.scrollHeight <= app.clientHeight &&
-      app.scrollWidth <= app.clientWidth
+      app.scrollHeight <= app.clientHeight && app.scrollWidth <= app.clientWidth
     );
   };
   const best = binarySearchLargest(
@@ -865,6 +880,7 @@ git commit -m "feat: add fitToViewport auto-scale routine"
 ## Task 8: Wire config into `main.ts`
 
 **Files:**
+
 - Modify: `src/main.ts`
 
 - [ ] **Step 1: Replace `src/main.ts` with the config-driven version**
@@ -974,6 +990,7 @@ git commit -m "feat: drive dashboard from URL config and auto-scale"
 ## Task 9: End-to-end tests
 
 **Files:**
+
 - Create: `e2e/params.spec.ts`
 
 These run against the real upstream API (same as the existing e2e). Keep assertions resilient to live data.
@@ -1075,6 +1092,7 @@ git commit -m "test: e2e coverage for URL params and auto-scale fit"
 ## Task 10: Documentation
 
 **Files:**
+
 - Modify: `README.md` (create if absent)
 
 - [ ] **Step 1: Add a parameters section**
@@ -1086,19 +1104,19 @@ Add the following section to `README.md` (place it after any existing intro/usag
 
 Append query parameters to the dashboard URL to customize it (works great as a Dakboard custom URL). All parameters are optional.
 
-| Parameter | Values | Default | Description |
-|-----------|--------|---------|-------------|
-| `groups` | comma-separated letters `A`–`L` | all 12 | Which groups to show, e.g. `groups=A,B,C,D` |
-| `cols` | integer | auto (2) | Number of grid columns |
-| `rows` | integer | auto | Number of grid rows |
-| `detail` | `full` \| `compact` | `full` | `compact` shows only Rank, Flag, Team, GD, Pts |
-| `scores` | `on` \| `off` | `on` | Show or hide the live score feed |
-| `upcoming` | integer | `5` | Max upcoming matches in the feed |
-| `finished` | integer | `8` | Max finished matches in the feed |
-| `refresh` | seconds | `90` | Data refresh interval (minimum 30) |
-| `theme` | `dark` \| `light` | `dark` | Color theme |
-| `highlight` | comma-separated FIFA codes | none | Emphasize specific teams, e.g. `highlight=USA,MEX,CAN` |
-| `fit` | `on` \| `off` | `on` | Auto-scale content to fill the screen with no scrolling |
+| Parameter   | Values                          | Default  | Description                                             |
+| ----------- | ------------------------------- | -------- | ------------------------------------------------------- |
+| `groups`    | comma-separated letters `A`–`L` | all 12   | Which groups to show, e.g. `groups=A,B,C,D`             |
+| `cols`      | integer                         | auto (2) | Number of grid columns                                  |
+| `rows`      | integer                         | auto     | Number of grid rows                                     |
+| `detail`    | `full` \| `compact`             | `full`   | `compact` shows only Rank, Flag, Team, GD, Pts          |
+| `scores`    | `on` \| `off`                   | `on`     | Show or hide the live score feed                        |
+| `upcoming`  | integer                         | `5`      | Max upcoming matches in the feed                        |
+| `finished`  | integer                         | `8`      | Max finished matches in the feed                        |
+| `refresh`   | seconds                         | `90`     | Data refresh interval (minimum 30)                      |
+| `theme`     | `dark` \| `light`               | `dark`   | Color theme                                             |
+| `highlight` | comma-separated FIFA codes      | none     | Emphasize specific teams, e.g. `highlight=USA,MEX,CAN`  |
+| `fit`       | `on` \| `off`                   | `on`     | Auto-scale content to fill the screen with no scrolling |
 
 ### Examples
 
@@ -1146,6 +1164,7 @@ Expected: PASS.
 - [ ] **Step 5: Manual smoke (optional but recommended)**
 
 Run: `pnpm dev`, then open:
+
 - `/` — all 12 groups, auto-scaled, no scrollbar.
 - `/?groups=A,B&theme=light&detail=compact` — two light compact tables filling the screen.
 - `/?highlight=USA,MEX,CAN` — host rows emphasized.
