@@ -8,6 +8,7 @@
   --accent: #ffd25a;
   --live: #ff5a5a;
   --strong: #ffffff;
+  --title: #8fa6c4;
 }
 
 :root[data-theme="light"] {
@@ -19,6 +20,7 @@
   --accent: #b8860b;
   --live: #d62828;
   --strong: #0b0f17;
+  --title: #3a4a63;
 }
 
 * {
@@ -62,7 +64,7 @@ body {
   font-size: clamp(11px, 1.4vh, 18px);
   letter-spacing: 1px;
   text-transform: uppercase;
-  color: #8fa6c4;
+  color: var(--title);
   border-bottom: 1px solid var(--line);
   padding-bottom: 0.2vh;
 }
