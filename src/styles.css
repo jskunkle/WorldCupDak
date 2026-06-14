@@ -1,4 +1,5 @@
 :root {
+  font-size: 16px;
   --bg: #0b0f17;
   --panel: #111827;
   --line: #1b2433;
@@ -6,6 +7,18 @@
   --muted: #56708f;
   --accent: #ffd25a;
   --live: #ff5a5a;
+  --strong: #ffffff;
+}
+
+:root[data-theme="light"] {
+  --bg: #f4f6fb;
+  --panel: #ffffff;
+  --line: #d7deea;
+  --text: #1a2230;
+  --muted: #5a6b82;
+  --accent: #b8860b;
+  --live: #d62828;
+  --strong: #0b0f17;
 }
 
 * {
@@ -32,8 +45,8 @@ body {
 .groups {
   flex: 1;
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: repeat(6, 1fr);
+  grid-template-columns: repeat(var(--cols, 2), 1fr);
+  grid-template-rows: repeat(var(--rows, 6), 1fr);
   gap: 0.6vh 2vw;
   min-height: 0;
 }
@@ -88,7 +101,7 @@ body {
 }
 
 .standings tr.advancing td {
-  color: #fff;
+  color: var(--strong);
 }
 
 .flag-cell {
@@ -126,11 +139,42 @@ body {
 }
 .match .score {
   font-weight: 700;
-  color: #fff;
+  color: var(--strong);
 }
 .match.live .score {
   color: var(--live);
 }
 .match.upcoming .score {
   color: var(--muted);
+}
+
+.standings tr.row--highlight td {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+}
+.standings tr.row--highlight td.team {
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+/* Auto-scale (fit) mode: size everything in rem/em off the root font-size,
+   which fitToViewport() adjusts. Content-sized rows let #app overflow so the
+   binary search can detect the largest font that fits. */
+#app[data-fit="on"] {
+  overflow: hidden;
+}
+#app[data-fit="on"] .groups {
+  flex: 0 0 auto;
+  grid-template-rows: repeat(var(--rows, 6), min-content);
+  align-content: start;
+}
+#app[data-fit="on"] .group-title {
+  font-size: 1.05rem;
+}
+#app[data-fit="on"] .standings th {
+  font-size: 0.7rem;
+}
+#app[data-fit="on"] .standings td {
+  font-size: 0.95rem;
+}
+#app[data-fit="on"] .match {
+  font-size: 1.05rem;
 }
