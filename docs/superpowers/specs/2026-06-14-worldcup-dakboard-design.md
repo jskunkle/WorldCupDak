@@ -30,11 +30,11 @@ static-site path is simpler and always-on.
 
 Base URL: `https://worldcup26.ir` — HTTPS works, `CORS_ORIGINS=*`, no auth.
 
-| Endpoint       | Use                                                              |
-| -------------- | --------------------------------------------------------------- |
-| `/get/teams`   | `team_id → { fifaCode, flagUrl, nameEn, group }`. Flags are HTTPS `flagcdn.com` URLs. |
-| `/get/games`   | Full 104-match schedule + scores. **Source of truth.**         |
-| `/get/groups`  | Group rosters (so all 4 teams show before any match is played). |
+| Endpoint      | Use                                                                                   |
+| ------------- | ------------------------------------------------------------------------------------- |
+| `/get/teams`  | `team_id → { fifaCode, flagUrl, nameEn, group }`. Flags are HTTPS `flagcdn.com` URLs. |
+| `/get/games`  | Full 104-match schedule + scores. **Source of truth.**                                |
+| `/get/groups` | Group rosters (so all 4 teams show before any match is played).                       |
 
 Verified behaviour:
 

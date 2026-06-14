@@ -38,6 +38,7 @@ Real object shapes:
 ```
 
 Notes the code must handle:
+
 - All numeric fields are **strings** → coerce to number.
 - `finished` is the string `"TRUE"`/`"FALSE"`.
 - `time_elapsed` observed only as `"notstarted"`/`"finished"` (no live minute).
@@ -75,6 +76,7 @@ WorldCupDak/
 ## Task 1: Project scaffold
 
 **Files:**
+
 - Create: `package.json`, `tsconfig.json`, `vite.config.ts`, `index.html`, `src/main.ts` (placeholder)
 
 - [ ] **Step 1: Create `package.json`**
@@ -186,6 +188,7 @@ git commit -m "chore: scaffold Vite + TypeScript + Vitest project"
 ## Task 2: Domain & API types
 
 **Files:**
+
 - Create: `src/types.ts`
 
 - [ ] **Step 1: Create `src/types.ts`**
@@ -297,6 +300,7 @@ git commit -m "feat: add raw and domain types"
 ## Task 3: API normalization (`normalizeTeams`, `normalizeGames`)
 
 **Files:**
+
 - Create: `src/api.ts`
 - Test: `tests/api.test.ts`
 
@@ -431,7 +435,9 @@ export async function fetchData(
     fetchImpl(`${BASE_URL}/get/games`),
   ]);
   if (!teamsRes.ok || !gamesRes.ok) {
-    throw new Error(`API error: teams ${teamsRes.status}, games ${gamesRes.status}`);
+    throw new Error(
+      `API error: teams ${teamsRes.status}, games ${gamesRes.status}`,
+    );
   }
   const teamsJson = (await teamsRes.json()) as { teams: RawTeam[] };
   const gamesJson = (await gamesRes.json()) as { games: RawGame[] };
@@ -459,6 +465,7 @@ git commit -m "feat: normalize teams and games from worldcup26.ir"
 ## Task 4: `computeStandings`
 
 **Files:**
+
 - Create: `src/standings.ts`
 - Test: `tests/standings.test.ts`
 
@@ -497,7 +504,12 @@ function game(
   };
 }
 
-const groupA = [team("1", "MEX"), team("2", "RSA"), team("3", "KOR"), team("4", "CZE")];
+const groupA = [
+  team("1", "MEX"),
+  team("2", "RSA"),
+  team("3", "KOR"),
+  team("4", "CZE"),
+];
 
 describe("computeStandings", () => {
   it("returns every team at 0-0-0 before any match", () => {
@@ -511,8 +523,26 @@ describe("computeStandings", () => {
     const [g] = computeStandings(groupA, [game("1", "2", 2, 0)]);
     const mex = g.rows.find((r) => r.code === "MEX")!;
     const rsa = g.rows.find((r) => r.code === "RSA")!;
-    expect(mex).toMatchObject({ gp: 1, w: 1, d: 0, l: 0, gf: 2, ga: 0, gd: 2, pts: 3 });
-    expect(rsa).toMatchObject({ gp: 1, w: 0, d: 0, l: 1, gf: 0, ga: 2, gd: -2, pts: 0 });
+    expect(mex).toMatchObject({
+      gp: 1,
+      w: 1,
+      d: 0,
+      l: 0,
+      gf: 2,
+      ga: 0,
+      gd: 2,
+      pts: 3,
+    });
+    expect(rsa).toMatchObject({
+      gp: 1,
+      w: 0,
+      d: 0,
+      l: 1,
+      gf: 0,
+      ga: 2,
+      gd: -2,
+      pts: 0,
+    });
   });
 
   it("scores a draw as 1 point each", () => {
@@ -523,7 +553,10 @@ describe("computeStandings", () => {
 
   it("sorts by Pts then GD then GF and assigns rank", () => {
     // MEX 3-0 RSA, KOR 1-0 CZE → MEX & KOR both 3pts, MEX better GD.
-    const g = computeStandings(groupA, [game("1", "2", 3, 0), game("3", "4", 1, 0)])[0];
+    const g = computeStandings(groupA, [
+      game("1", "2", 3, 0),
+      game("3", "4", 1, 0),
+    ])[0];
     expect(g.rows.map((r) => r.code)).toEqual(["MEX", "KOR", "CZE", "RSA"]);
     expect(g.rows.map((r) => r.rank)).toEqual([1, 2, 3, 4]);
   });
@@ -556,7 +589,12 @@ Expected: FAIL — `computeStandings` not defined.
 import type { Team, Game, GroupTable, StandingRow } from "./types";
 
 interface Tally {
-  gp: number; w: number; d: number; l: number; gf: number; ga: number;
+  gp: number;
+  w: number;
+  d: number;
+  l: number;
+  gf: number;
+  ga: number;
 }
 
 export function computeStandings(teams: Team[], games: Game[]): GroupTable[] {
@@ -570,12 +608,22 @@ export function computeStandings(teams: Team[], games: Game[]): GroupTable[] {
     const home = tallies.get(g.homeId);
     const away = tallies.get(g.awayId);
     if (!home || !away) continue;
-    home.gp++; away.gp++;
-    home.gf += g.homeScore; home.ga += g.awayScore;
-    away.gf += g.awayScore; away.ga += g.homeScore;
-    if (g.homeScore > g.awayScore) { home.w++; away.l++; }
-    else if (g.awayScore > g.homeScore) { away.w++; home.l++; }
-    else { home.d++; away.d++; }
+    home.gp++;
+    away.gp++;
+    home.gf += g.homeScore;
+    home.ga += g.awayScore;
+    away.gf += g.awayScore;
+    away.ga += g.homeScore;
+    if (g.homeScore > g.awayScore) {
+      home.w++;
+      away.l++;
+    } else if (g.awayScore > g.homeScore) {
+      away.w++;
+      home.l++;
+    } else {
+      home.d++;
+      away.d++;
+    }
   }
 
   const byGroup = new Map<string, StandingRow[]>();
@@ -587,7 +635,12 @@ export function computeStandings(teams: Team[], games: Game[]): GroupTable[] {
       code: t.code,
       name: t.name,
       flagUrl: t.flagUrl,
-      gp: a.gp, w: a.w, d: a.d, l: a.l, gf: a.gf, ga: a.ga,
+      gp: a.gp,
+      w: a.w,
+      d: a.d,
+      l: a.l,
+      gf: a.gf,
+      ga: a.ga,
       gd: a.gf - a.ga,
       pts: a.w * 3 + a.d,
     };
@@ -596,15 +649,13 @@ export function computeStandings(teams: Team[], games: Game[]): GroupTable[] {
     byGroup.set(t.group, list);
   }
 
-  return [...byGroup.keys()]
-    .sort()
-    .map((group) => {
-      const rows = byGroup.get(group)!.sort(
-        (x, y) => y.pts - x.pts || y.gd - x.gd || y.gf - x.gf,
-      );
-      rows.forEach((r, i) => (r.rank = i + 1));
-      return { group, rows };
-    });
+  return [...byGroup.keys()].sort().map((group) => {
+    const rows = byGroup
+      .get(group)!
+      .sort((x, y) => y.pts - x.pts || y.gd - x.gd || y.gf - x.gf);
+    rows.forEach((r, i) => (r.rank = i + 1));
+    return { group, rows };
+  });
 }
 ```
 
@@ -625,6 +676,7 @@ git commit -m "feat: compute group standings from finished matches"
 ## Task 5: `buildScoreFeed`
 
 **Files:**
+
 - Modify: `src/standings.ts`
 - Test: `tests/standings.test.ts` (add a `describe` block)
 
@@ -638,15 +690,27 @@ describe("buildScoreFeed", () => {
 
   function fg(id: string, opts: Partial<Game>): Game {
     return {
-      id, homeId: "h", awayId: "a", homeName: "Home", awayName: "Away",
-      homeScore: 0, awayScore: 0, group: "A", matchday: 1,
-      kickoff: new Date(2026, 5, 14, 12, 0), finished: false, isGroupStage: true,
+      id,
+      homeId: "h",
+      awayId: "a",
+      homeName: "Home",
+      awayName: "Away",
+      homeScore: 0,
+      awayScore: 0,
+      group: "A",
+      matchday: 1,
+      kickoff: new Date(2026, 5, 14, 12, 0),
+      finished: false,
+      isGroupStage: true,
       ...opts,
     };
   }
 
   it("classifies started-but-unfinished matches as live", () => {
-    const feed = buildScoreFeed([fg("1", { kickoff: new Date(2026, 5, 14, 17, 0) })], now);
+    const feed = buildScoreFeed(
+      [fg("1", { kickoff: new Date(2026, 5, 14, 17, 0) })],
+      now,
+    );
     expect(feed[0].kind).toBe("live");
   });
 
@@ -656,7 +720,10 @@ describe("buildScoreFeed", () => {
   });
 
   it("classifies future matches as upcoming", () => {
-    const feed = buildScoreFeed([fg("1", { kickoff: new Date(2026, 5, 14, 21, 0) })], now);
+    const feed = buildScoreFeed(
+      [fg("1", { kickoff: new Date(2026, 5, 14, 21, 0) })],
+      now,
+    );
     expect(feed[0].kind).toBe("upcoming");
   });
 
@@ -752,6 +819,7 @@ git commit -m "feat: build live/finished/upcoming score feed"
 ## Task 6: Render layer
 
 **Files:**
+
 - Create: `src/render.ts`
 - Test: `tests/render.test.ts`
 
@@ -766,9 +834,19 @@ function makeGroups(): GroupTable[] {
   return ["A", "B"].map((group) => ({
     group,
     rows: [1, 2, 3, 4].map((n) => ({
-      rank: n, teamId: `${group}${n}`, code: `T${n}`, name: `Team ${n}`,
-      flagUrl: `flag/${group}${n}.png`, gp: 1, w: 1, d: 0, l: 0,
-      gf: 2, ga: 0, gd: 2, pts: 3,
+      rank: n,
+      teamId: `${group}${n}`,
+      code: `T${n}`,
+      name: `Team ${n}`,
+      flagUrl: `flag/${group}${n}.png`,
+      gp: 1,
+      w: 1,
+      d: 0,
+      l: 0,
+      gf: 2,
+      ga: 0,
+      gd: 2,
+      pts: 3,
     })),
   }));
 }
@@ -782,7 +860,9 @@ describe("renderStandings", () => {
   it("renders one table per group with a labelled header", () => {
     renderStandings(container, makeGroups());
     expect(container.querySelectorAll("[data-group]")).toHaveLength(2);
-    expect(container.querySelector('[data-group="A"]')?.textContent).toContain("Group A");
+    expect(container.querySelector('[data-group="A"]')?.textContent).toContain(
+      "Group A",
+    );
   });
 
   it("renders a row per team tagged with the team code", () => {
@@ -810,8 +890,15 @@ describe("renderScoreFeed", () => {
   it("renders each match with score and a kind class", () => {
     const container = document.createElement("div");
     const feed: FeedMatch[] = [
-      { id: "1", kind: "live", homeName: "USA", awayName: "PAR",
-        homeScore: 4, awayScore: 1, kickoff: new Date(2026, 5, 14, 17, 0) },
+      {
+        id: "1",
+        kind: "live",
+        homeName: "USA",
+        awayName: "PAR",
+        homeScore: 4,
+        awayScore: 1,
+        kickoff: new Date(2026, 5, 14, 17, 0),
+      },
     ];
     renderScoreFeed(container, feed);
     const m = container.querySelector('[data-match="1"]')!;
@@ -840,7 +927,10 @@ function el(tag: string, className?: string, text?: string): HTMLElement {
   return node;
 }
 
-export function renderStandings(container: HTMLElement, groups: GroupTable[]): void {
+export function renderStandings(
+  container: HTMLElement,
+  groups: GroupTable[],
+): void {
   container.replaceChildren(); // in-place refresh: clear then repaint
 
   for (const g of groups) {
@@ -850,8 +940,8 @@ export function renderStandings(container: HTMLElement, groups: GroupTable[]): v
 
     const table = el("table", "standings");
     const head = el("tr", "head");
-    ["#", "", "Team", "GP", "W", "D", "L", "GF", "GA", "GD", "Pts"].forEach((h) =>
-      head.appendChild(el("th", undefined, h)),
+    ["#", "", "Team", "GP", "W", "D", "L", "GF", "GA", "GD", "Pts"].forEach(
+      (h) => head.appendChild(el("th", undefined, h)),
     );
     table.appendChild(head);
 
@@ -885,15 +975,16 @@ export function renderStandings(container: HTMLElement, groups: GroupTable[]): v
   }
 }
 
-export function renderScoreFeed(container: HTMLElement, feed: FeedMatch[]): void {
+export function renderScoreFeed(
+  container: HTMLElement,
+  feed: FeedMatch[],
+): void {
   container.replaceChildren();
   for (const m of feed) {
     const item = el("span", `match ${m.kind}`);
     item.setAttribute("data-match", m.id);
     const score =
-      m.kind === "upcoming"
-        ? "vs"
-        : `${m.homeScore}-${m.awayScore}`;
+      m.kind === "upcoming" ? "vs" : `${m.homeScore}-${m.awayScore}`;
     item.appendChild(el("span", "home", m.homeName));
     item.appendChild(el("span", "score", score));
     item.appendChild(el("span", "away", m.awayName));
@@ -919,6 +1010,7 @@ git commit -m "feat: render 2x6 standings grid and score strip"
 ## Task 7: Orchestration (`main.ts`)
 
 **Files:**
+
 - Modify: `src/main.ts`
 
 - [ ] **Step 1: Replace `src/main.ts` with the orchestrator**
@@ -1005,6 +1097,7 @@ git commit -m "feat: wire up data load, 90s refresh, and last-good fallback"
 ## Task 8: Dark theme styles
 
 **Files:**
+
 - Create: `src/styles.css`
 
 - [ ] **Step 1: Create `src/styles.css`**
@@ -1020,9 +1113,12 @@ git commit -m "feat: wire up data load, 90s refresh, and last-good fallback"
   --live: #ff5a5a;
 }
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
-html, body {
+html,
+body {
   margin: 0;
   height: 100%;
   background: var(--bg);
@@ -1047,7 +1143,11 @@ html, body {
   min-height: 0;
 }
 
-.group-card { display: flex; flex-direction: column; min-height: 0; }
+.group-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
 
 .group-title {
   margin: 0 0 0.3vh;
@@ -1059,7 +1159,10 @@ html, body {
   padding-bottom: 0.2vh;
 }
 
-.standings { width: 100%; border-collapse: collapse; }
+.standings {
+  width: 100%;
+  border-collapse: collapse;
+}
 
 .standings th {
   font-size: clamp(8px, 1vh, 12px);
@@ -1068,22 +1171,45 @@ html, body {
   text-align: right;
   padding: 0.1vh 0.4vw;
 }
-.standings th:nth-child(3) { text-align: left; }
+.standings th:nth-child(3) {
+  text-align: left;
+}
 
 .standings td {
   font-size: clamp(10px, 1.3vh, 16px);
   text-align: right;
   padding: 0.15vh 0.4vw;
 }
-.standings td.rank { color: var(--muted); }
-.standings td.team { text-align: left; font-weight: 600; }
-.standings td.pts { color: var(--accent); font-weight: 700; }
+.standings td.rank {
+  color: var(--muted);
+}
+.standings td.team {
+  text-align: left;
+  font-weight: 600;
+}
+.standings td.pts {
+  color: var(--accent);
+  font-weight: 700;
+}
 
-.standings tr.advancing td { color: #fff; }
+.standings tr.advancing td {
+  color: #fff;
+}
 
-.flag-cell { width: 1.6em; }
-.flag { width: 1.6em; height: 1.1em; border-radius: 2px; vertical-align: middle; object-fit: cover; }
-.flag-fallback { font-size: 0.8em; color: var(--muted); }
+.flag-cell {
+  width: 1.6em;
+}
+.flag {
+  width: 1.6em;
+  height: 1.1em;
+  border-radius: 2px;
+  vertical-align: middle;
+  object-fit: cover;
+}
+.flag-fallback {
+  font-size: 0.8em;
+  color: var(--muted);
+}
 
 .scores {
   background: var(--panel);
@@ -1096,10 +1222,22 @@ html, body {
   white-space: nowrap;
 }
 
-.match { display: inline-flex; gap: 0.4em; align-items: baseline; font-size: clamp(11px, 1.6vh, 18px); }
-.match .score { font-weight: 700; color: #fff; }
-.match.live .score { color: var(--live); }
-.match.upcoming .score { color: var(--muted); }
+.match {
+  display: inline-flex;
+  gap: 0.4em;
+  align-items: baseline;
+  font-size: clamp(11px, 1.6vh, 18px);
+}
+.match .score {
+  font-weight: 700;
+  color: #fff;
+}
+.match.live .score {
+  color: var(--live);
+}
+.match.upcoming .score {
+  color: var(--muted);
+}
 ```
 
 - [ ] **Step 2: Visual check**
@@ -1120,6 +1258,7 @@ git commit -m "feat: dark high-contrast 2x6 grid theme"
 ## Task 9: Playwright e2e smoke test
 
 **Files:**
+
 - Create: `playwright.config.ts`, `e2e/dashboard.spec.ts`
 
 - [ ] **Step 1: Create `playwright.config.ts`**
@@ -1184,6 +1323,7 @@ git commit -m "test: e2e smoke for 12 groups and scores strip"
 ## Task 10: Render deploy config + docs
 
 **Files:**
+
 - Create: `render.yaml`
 - Modify: `README.md`
 
@@ -1203,7 +1343,7 @@ services:
 
 Replace the **Status** section with:
 
-```markdown
+````markdown
 ## Status
 
 Implemented. Static site; deploy to Render (see below).
@@ -1217,6 +1357,7 @@ pnpm test       # unit tests (Vitest)
 pnpm e2e        # end-to-end smoke (Playwright)
 pnpm build      # production build to dist/
 ```
+````
 
 ## Deploy (Render Static Site)
 
@@ -1225,7 +1366,8 @@ pnpm build      # production build to dist/
 2. Render serves the site over HTTPS — copy the public URL.
 3. In DAKboard, add a **Website/iframe** block on a Custom Screen, paste the
    URL, and size it to a landscape region.
-```
+
+````
 
 - [ ] **Step 3: Run formatter and full verification**
 
@@ -1239,7 +1381,7 @@ Expected: all pass / clean build.
 ```bash
 git add render.yaml README.md
 git commit -m "docs: add Render deploy config and developer instructions"
-```
+````
 
 ---
 
