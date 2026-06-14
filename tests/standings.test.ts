@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { computeStandings, buildScoreFeed } from "../src/standings";
-import type { Team, Game } from "../src/types";
+import { computeStandings, buildScoreFeed, filterGroups } from "../src/standings";
+import type { Team, Game, GroupTable } from "../src/types";
 
 function team(id: string, code: string, group = "A"): Team {
   return { id, code, name: code, flagUrl: `flag/${code}`, group };
@@ -201,5 +201,73 @@ describe("buildScoreFeed", () => {
     // most-recent kept: the latest kickoff (f11) must be present, oldest (f0) dropped
     expect(fin[0].id).toBe("f11");
     expect(fin.some((m) => m.id === "f0")).toBe(false);
+  });
+});
+
+describe("filterGroups", () => {
+  const tables: GroupTable[] = ["A", "B", "C"].map((group) => ({
+    group,
+    rows: [],
+  }));
+
+  it("returns all tables when the filter is null", () => {
+    expect(filterGroups(tables, null).map((t) => t.group)).toEqual([
+      "A",
+      "B",
+      "C",
+    ]);
+  });
+
+  it("returns all tables when the filter is empty", () => {
+    expect(filterGroups(tables, []).map((t) => t.group)).toEqual([
+      "A",
+      "B",
+      "C",
+    ]);
+  });
+
+  it("keeps only the requested groups, preserving A..L order", () => {
+    expect(filterGroups(tables, ["C", "A"]).map((t) => t.group)).toEqual([
+      "A",
+      "C",
+    ]);
+  });
+});
+
+describe("buildScoreFeed limits", () => {
+  const now = new Date(2026, 5, 14, 18, 0);
+  function fg(id: string, opts: Partial<Game>): Game {
+    return {
+      id,
+      homeId: "h",
+      awayId: "a",
+      homeName: "Home",
+      awayName: "Away",
+      homeScore: 0,
+      awayScore: 0,
+      group: "A",
+      matchday: 1,
+      kickoff: new Date(2026, 5, 14, 12, 0),
+      finished: false,
+      isGroupStage: true,
+      ...opts,
+    };
+  }
+
+  it("respects custom upcoming/finished limits", () => {
+    const games = [
+      ...Array.from({ length: 6 }, (_, i) =>
+        fg(`u${i}`, { kickoff: new Date(2026, 5, 15, 12 + i, 0) }),
+      ),
+      ...Array.from({ length: 6 }, (_, i) =>
+        fg(`f${i}`, {
+          finished: true,
+          kickoff: new Date(2026, 5, 10 + i, 12, 0),
+        }),
+      ),
+    ];
+    const feed = buildScoreFeed(games, now, { maxUpcoming: 2, maxFinished: 3 });
+    expect(feed.filter((m) => m.kind === "upcoming")).toHaveLength(2);
+    expect(feed.filter((m) => m.kind === "finished")).toHaveLength(3);
   });
 });
