@@ -1,22 +1,34 @@
 import { fetchData } from "./api";
-import { computeStandings, buildScoreFeed } from "./standings";
+import { computeStandings, buildScoreFeed, filterGroups } from "./standings";
 import { renderStandings, renderScoreFeed } from "./render";
+import { parseConfig, deriveGrid } from "./config";
+import { fitToViewport } from "./fit";
 import type { Snapshot } from "./types";
 
-const REFRESH_MS = 90_000;
+const config = parseConfig(window.location.search);
 
+const appEl = document.getElementById("app")!;
 const groupsEl = document.getElementById("groups")!;
 const scoresEl = document.getElementById("scores")!;
 
+// Apply one-time config to the DOM.
+document.documentElement.setAttribute("data-theme", config.theme);
+appEl.setAttribute("data-fit", config.fit ? "on" : "off");
+if (!config.scores) scoresEl.style.display = "none";
+
 let lastGood: Snapshot | null = null;
 let timer: number | undefined;
+let resizeTimer: number | undefined;
 
 async function refresh(): Promise<void> {
   try {
     const { teams, games } = await fetchData();
     lastGood = {
-      groups: computeStandings(teams, games),
-      feed: buildScoreFeed(games, new Date()),
+      groups: filterGroups(computeStandings(teams, games), config.groups),
+      feed: buildScoreFeed(games, new Date(), {
+        maxUpcoming: config.upcoming,
+        maxFinished: config.finished,
+      }),
     };
     paint(lastGood);
   } catch (err) {
@@ -26,13 +38,21 @@ async function refresh(): Promise<void> {
 }
 
 function paint(s: Snapshot): void {
-  renderStandings(groupsEl, s.groups);
-  renderScoreFeed(scoresEl, s.feed);
+  const grid = deriveGrid(s.groups.length, config.cols, config.rows);
+  groupsEl.style.setProperty("--cols", String(grid.cols));
+  groupsEl.style.setProperty("--rows", String(grid.rows));
+
+  renderStandings(groupsEl, s.groups, {
+    detail: config.detail,
+    highlight: config.highlight,
+  });
+  if (config.scores) renderScoreFeed(scoresEl, s.feed);
+  if (config.fit) fitToViewport(appEl);
 }
 
 function start(): void {
   if (timer !== undefined) return;
-  timer = window.setInterval(refresh, REFRESH_MS);
+  timer = window.setInterval(refresh, config.refreshMs);
 }
 
 function stop(): void {
@@ -48,6 +68,12 @@ document.addEventListener("visibilitychange", () => {
     void refresh();
     start();
   }
+});
+
+window.addEventListener("resize", () => {
+  if (!config.fit) return;
+  window.clearTimeout(resizeTimer);
+  resizeTimer = window.setTimeout(() => fitToViewport(appEl), 150);
 });
 
 void refresh();
