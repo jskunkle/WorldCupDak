@@ -81,3 +81,16 @@ export function parseConfig(search: string): DashboardConfig {
     fit: p.get("fit") !== "off",
   };
 }
+
+export function deriveGrid(
+  n: number,
+  cols: number | null,
+  rows: number | null,
+): { cols: number; rows: number } {
+  const count = Math.max(1, n);
+  if (cols && rows) return { cols, rows };
+  if (cols) return { cols, rows: Math.ceil(count / cols) };
+  if (rows) return { rows, cols: Math.ceil(count / rows) };
+  const c = Math.min(2, count);
+  return { cols: c, rows: Math.ceil(count / c) };
+}

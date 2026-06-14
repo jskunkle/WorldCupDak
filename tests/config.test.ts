@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseConfig } from "../src/config";
+import { parseConfig, deriveGrid } from "../src/config";
 
 describe("parseConfig", () => {
   it("returns documented defaults for an empty query string", () => {
@@ -85,5 +85,28 @@ describe("parseConfig", () => {
   it("ignores unknown params", () => {
     expect(() => parseConfig("?bogus=1&groups=A")).not.toThrow();
     expect(parseConfig("?bogus=1&groups=A").groups).toEqual(["A"]);
+  });
+});
+
+describe("deriveGrid", () => {
+  it("defaults to 2 columns and preserves 2x6 for 12 groups", () => {
+    expect(deriveGrid(12, null, null)).toEqual({ cols: 2, rows: 6 });
+  });
+
+  it("uses a single column for a single group", () => {
+    expect(deriveGrid(1, null, null)).toEqual({ cols: 1, rows: 1 });
+  });
+
+  it("derives rows from an explicit column count", () => {
+    expect(deriveGrid(8, 4, null)).toEqual({ cols: 4, rows: 2 });
+    expect(deriveGrid(7, 3, null)).toEqual({ cols: 3, rows: 3 });
+  });
+
+  it("derives columns from an explicit row count", () => {
+    expect(deriveGrid(6, null, 2)).toEqual({ cols: 3, rows: 2 });
+  });
+
+  it("honors both when given", () => {
+    expect(deriveGrid(4, 4, 1)).toEqual({ cols: 4, rows: 1 });
   });
 });
