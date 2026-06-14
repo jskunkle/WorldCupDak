@@ -1,0 +1,7 @@
+services:
+  - type: web
+    runtime: static
+    name: worldcupdak
+    buildCommand: corepack enable && pnpm install && pnpm build
+    staticPublishPath: ./dist
+    pullRequestPreviewsEnabled: false
