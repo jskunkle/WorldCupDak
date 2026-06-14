@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { computeStandings, buildScoreFeed, filterGroups } from "../src/standings";
+import {
+  computeStandings,
+  buildScoreFeed,
+  filterGroups,
+} from "../src/standings";
 import type { Team, Game, GroupTable } from "../src/types";
 
 function team(id: string, code: string, group = "A"): Team {
@@ -25,6 +29,24 @@ function game(
     matchday: 1,
     kickoff: new Date(2026, 5, 11, 12, 0),
     finished: true,
+    isGroupStage: true,
+    ...opts,
+  };
+}
+
+function fg(id: string, opts: Partial<Game>): Game {
+  return {
+    id,
+    homeId: "h",
+    awayId: "a",
+    homeName: "Home",
+    awayName: "Away",
+    homeScore: 0,
+    awayScore: 0,
+    group: "A",
+    matchday: 1,
+    kickoff: new Date(2026, 5, 14, 12, 0),
+    finished: false,
     isGroupStage: true,
     ...opts,
   };
@@ -129,24 +151,6 @@ describe("computeStandings", () => {
 describe("buildScoreFeed", () => {
   const now = new Date(2026, 5, 14, 18, 0); // June 14 2026, 18:00
 
-  function fg(id: string, opts: Partial<Game>): Game {
-    return {
-      id,
-      homeId: "h",
-      awayId: "a",
-      homeName: "Home",
-      awayName: "Away",
-      homeScore: 0,
-      awayScore: 0,
-      group: "A",
-      matchday: 1,
-      kickoff: new Date(2026, 5, 14, 12, 0),
-      finished: false,
-      isGroupStage: true,
-      ...opts,
-    };
-  }
-
   it("classifies started-but-unfinished matches as live", () => {
     const feed = buildScoreFeed(
       [fg("1", { kickoff: new Date(2026, 5, 14, 17, 0) })],
@@ -226,7 +230,7 @@ describe("filterGroups", () => {
     ]);
   });
 
-  it("keeps only the requested groups, preserving A..L order", () => {
+  it("keeps only the requested groups, preserving input order", () => {
     expect(filterGroups(tables, ["C", "A"]).map((t) => t.group)).toEqual([
       "A",
       "C",
@@ -236,23 +240,6 @@ describe("filterGroups", () => {
 
 describe("buildScoreFeed limits", () => {
   const now = new Date(2026, 5, 14, 18, 0);
-  function fg(id: string, opts: Partial<Game>): Game {
-    return {
-      id,
-      homeId: "h",
-      awayId: "a",
-      homeName: "Home",
-      awayName: "Away",
-      homeScore: 0,
-      awayScore: 0,
-      group: "A",
-      matchday: 1,
-      kickoff: new Date(2026, 5, 14, 12, 0),
-      finished: false,
-      isGroupStage: true,
-      ...opts,
-    };
-  }
 
   it("respects custom upcoming/finished limits", () => {
     const games = [
