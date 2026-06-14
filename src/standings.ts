@@ -97,7 +97,22 @@ function toFeedMatch(g: Game, kind: FeedKind): FeedMatch {
   };
 }
 
-export function buildScoreFeed(games: Game[], now: Date): FeedMatch[] {
+export function filterGroups(
+  tables: GroupTable[],
+  letters: string[] | null,
+): GroupTable[] {
+  if (!letters || letters.length === 0) return tables;
+  const want = new Set(letters);
+  return tables.filter((t) => want.has(t.group));
+}
+
+export function buildScoreFeed(
+  games: Game[],
+  now: Date,
+  limits: { maxFinished?: number; maxUpcoming?: number } = {},
+): FeedMatch[] {
+  const maxFinished = limits.maxFinished ?? MAX_FINISHED;
+  const maxUpcoming = limits.maxUpcoming ?? MAX_UPCOMING;
   const live: FeedMatch[] = [];
   const finished: FeedMatch[] = [];
   const upcoming: FeedMatch[] = [];
@@ -115,7 +130,7 @@ export function buildScoreFeed(games: Game[], now: Date): FeedMatch[] {
 
   return [
     ...live,
-    ...finished.slice(0, MAX_FINISHED),
-    ...upcoming.slice(0, MAX_UPCOMING),
+    ...finished.slice(0, maxFinished),
+    ...upcoming.slice(0, maxUpcoming),
   ];
 }
