@@ -78,6 +78,7 @@ export function computeStandings(teams: Team[], games: Game[]): GroupTable[] {
 }
 
 const MAX_UPCOMING = 5;
+const MAX_FINISHED = 8;
 
 function classify(g: Game, now: Date): FeedKind {
   if (g.finished) return "finished";
@@ -112,5 +113,9 @@ export function buildScoreFeed(games: Game[], now: Date): FeedMatch[] {
   finished.sort((a, b) => b.kickoff.getTime() - a.kickoff.getTime()); // most recent first
   upcoming.sort((a, b) => a.kickoff.getTime() - b.kickoff.getTime());
 
-  return [...live, ...finished, ...upcoming.slice(0, MAX_UPCOMING)];
+  return [
+    ...live,
+    ...finished.slice(0, MAX_FINISHED),
+    ...upcoming.slice(0, MAX_UPCOMING),
+  ];
 }

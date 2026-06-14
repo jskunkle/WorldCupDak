@@ -8,9 +8,12 @@
   --live: #ff5a5a;
 }
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
-html, body {
+html,
+body {
   margin: 0;
   height: 100%;
   background: var(--bg);
@@ -30,12 +33,16 @@ html, body {
   flex: 1;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  grid-auto-rows: 1fr;
+  grid-template-rows: repeat(6, 1fr);
   gap: 0.6vh 2vw;
   min-height: 0;
 }
 
-.group-card { display: flex; flex-direction: column; min-height: 0; }
+.group-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
 
 .group-title {
   margin: 0 0 0.3vh;
@@ -47,7 +54,10 @@ html, body {
   padding-bottom: 0.2vh;
 }
 
-.standings { width: 100%; border-collapse: collapse; }
+.standings {
+  width: 100%;
+  border-collapse: collapse;
+}
 
 .standings th {
   font-size: clamp(8px, 1vh, 12px);
@@ -56,22 +66,45 @@ html, body {
   text-align: right;
   padding: 0.1vh 0.4vw;
 }
-.standings th:nth-child(3) { text-align: left; }
+.standings th:nth-child(3) {
+  text-align: left;
+}
 
 .standings td {
   font-size: clamp(10px, 1.3vh, 16px);
   text-align: right;
   padding: 0.15vh 0.4vw;
 }
-.standings td.rank { color: var(--muted); }
-.standings td.team { text-align: left; font-weight: 600; }
-.standings td.pts { color: var(--accent); font-weight: 700; }
+.standings td.rank {
+  color: var(--muted);
+}
+.standings td.team {
+  text-align: left;
+  font-weight: 600;
+}
+.standings td.pts {
+  color: var(--accent);
+  font-weight: 700;
+}
 
-.standings tr.advancing td { color: #fff; }
+.standings tr.advancing td {
+  color: #fff;
+}
 
-.flag-cell { width: 1.6em; }
-.flag { width: 1.6em; height: 1.1em; border-radius: 2px; vertical-align: middle; object-fit: cover; }
-.flag-fallback { font-size: 0.8em; color: var(--muted); }
+.flag-cell {
+  width: 1.6em;
+}
+.flag {
+  width: 1.6em;
+  height: 1.1em;
+  border-radius: 2px;
+  vertical-align: middle;
+  object-fit: cover;
+}
+.flag-fallback {
+  font-size: 0.8em;
+  color: var(--muted);
+}
 
 .scores {
   background: var(--panel);
@@ -82,9 +115,22 @@ html, body {
   align-items: center;
   overflow: hidden;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
-.match { display: inline-flex; gap: 0.4em; align-items: baseline; font-size: clamp(11px, 1.6vh, 18px); }
-.match .score { font-weight: 700; color: #fff; }
-.match.live .score { color: var(--live); }
-.match.upcoming .score { color: var(--muted); }
+.match {
+  display: inline-flex;
+  gap: 0.4em;
+  align-items: baseline;
+  font-size: clamp(11px, 1.6vh, 18px);
+}
+.match .score {
+  font-weight: 700;
+  color: #fff;
+}
+.match.live .score {
+  color: var(--live);
+}
+.match.upcoming .score {
+  color: var(--muted);
+}

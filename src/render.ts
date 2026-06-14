@@ -35,7 +35,7 @@ export function renderStandings(
       const flag = document.createElement("img");
       flag.className = "flag";
       flag.src = r.flagUrl;
-      flag.alt = r.code;
+      flag.alt = r.name;
       flag.addEventListener("error", () => {
         flagCell.replaceChildren(el("span", "flag-fallback", r.code));
       });

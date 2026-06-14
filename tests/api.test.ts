@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { normalizeTeams, normalizeGames } from "../src/api";
+import { normalizeTeams, normalizeGames, fetchData } from "../src/api";
 import type { RawTeam, RawGame } from "../src/types";
 
 const rawTeam: RawTeam = {
@@ -61,5 +61,48 @@ describe("normalizeGames", () => {
   it("marks non-group types as not group stage", () => {
     const [g] = normalizeGames([{ ...finishedGame, type: "round_of_32" }]);
     expect(g.isGroupStage).toBe(false);
+  });
+
+  it("coerces malformed numeric fields to 0 instead of NaN", () => {
+    const [g] = normalizeGames([
+      { ...finishedGame, home_score: "null", away_score: "" },
+    ]);
+    expect(g.homeScore).toBe(0);
+    expect(g.awayScore).toBe(0);
+  });
+});
+
+describe("fetchData", () => {
+  function fakeResponse(body: unknown, ok = true, status = 200): Response {
+    return {
+      ok,
+      status,
+      json: async () => body,
+    } as unknown as Response;
+  }
+
+  it("fetches both endpoints and returns normalized data", async () => {
+    const calls: string[] = [];
+    const fakeFetch = (async (url: string) => {
+      calls.push(url);
+      if (url.includes("/get/teams")) return fakeResponse({ teams: [rawTeam] });
+      return fakeResponse({ games: [finishedGame] });
+    }) as unknown as typeof fetch;
+
+    const data = await fetchData(fakeFetch);
+    expect(calls.some((u) => u.includes("/get/teams"))).toBe(true);
+    expect(calls.some((u) => u.includes("/get/games"))).toBe(true);
+    expect(data.teams[0].code).toBe("MEX");
+    expect(data.games[0].homeScore).toBe(2);
+  });
+
+  it("throws when a response is not ok", async () => {
+    const fakeFetch = (async (url: string) => {
+      if (url.includes("/get/teams"))
+        return fakeResponse({ teams: [] }, false, 500);
+      return fakeResponse({ games: [] });
+    }) as unknown as typeof fetch;
+
+    await expect(fetchData(fakeFetch)).rejects.toThrow();
   });
 });

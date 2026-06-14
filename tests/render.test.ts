@@ -56,6 +56,17 @@ describe("renderStandings", () => {
     renderStandings(container, makeGroups());
     expect(container.querySelectorAll("[data-group]")).toHaveLength(2);
   });
+
+  it("falls back to the team code when a flag image fails to load", () => {
+    renderStandings(container, makeGroups());
+    const img = container.querySelector(
+      '[data-team="T1"] img.flag',
+    ) as HTMLImageElement;
+    expect(img).toBeTruthy();
+    img.dispatchEvent(new Event("error"));
+    const cell = container.querySelector('[data-team="T1"] .flag-fallback');
+    expect(cell?.textContent).toBe("T1");
+  });
 });
 
 describe("renderScoreFeed", () => {
@@ -78,5 +89,22 @@ describe("renderScoreFeed", () => {
     expect(m.textContent).toContain("USA");
     expect(m.textContent).toContain("4");
     expect(m.textContent).toContain("1");
+  });
+
+  it("shows 'vs' instead of a score for upcoming matches", () => {
+    const container = document.createElement("div");
+    renderScoreFeed(container, [
+      {
+        id: "9",
+        kind: "upcoming",
+        homeName: "GER",
+        awayName: "CUW",
+        homeScore: 0,
+        awayScore: 0,
+        kickoff: new Date(2026, 5, 20, 12, 0),
+      },
+    ]);
+    const m = container.querySelector('[data-match="9"]')!;
+    expect(m.querySelector(".score")?.textContent).toBe("vs");
   });
 });

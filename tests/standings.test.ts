@@ -101,6 +101,29 @@ describe("computeStandings", () => {
     const groups = computeStandings(teams, []);
     expect(groups.map((g) => g.group)).toEqual(["A", "L"]);
   });
+
+  it("breaks a Pts+GD tie by goals for", () => {
+    // KOR 2-2 CZE? No — need equal pts & gd, different gf.
+    // MEX 3-3 RSA (draw): both 1pt, gd 0, gf 3.
+    // KOR 1-1 CZE (draw): both 1pt, gd 0, gf 1.
+    const g = computeStandings(groupA, [
+      game("1", "2", 3, 3),
+      game("3", "4", 1, 1),
+    ])[0];
+    // MEX & RSA have gf=3; KOR & CZE have gf=1 → MEX/RSA rank above KOR/CZE.
+    expect(
+      g.rows
+        .slice(0, 2)
+        .map((r) => r.code)
+        .sort(),
+    ).toEqual(["MEX", "RSA"]);
+    expect(
+      g.rows
+        .slice(2, 4)
+        .map((r) => r.code)
+        .sort(),
+    ).toEqual(["CZE", "KOR"]);
+  });
 });
 
 describe("buildScoreFeed", () => {
@@ -163,5 +186,20 @@ describe("buildScoreFeed", () => {
     );
     const feed = buildScoreFeed(upcoming, now);
     expect(feed.filter((m) => m.kind === "upcoming")).toHaveLength(5);
+  });
+
+  it("limits finished matches to the most recent 8", () => {
+    const finished = Array.from({ length: 12 }, (_, i) =>
+      fg(`f${i}`, {
+        finished: true,
+        kickoff: new Date(2026, 5, 10 + i, 12, 0),
+      }),
+    );
+    const feed = buildScoreFeed(finished, now);
+    const fin = feed.filter((m) => m.kind === "finished");
+    expect(fin).toHaveLength(8);
+    // most-recent kept: the latest kickoff (f11) must be present, oldest (f0) dropped
+    expect(fin[0].id).toBe("f11");
+    expect(fin.some((m) => m.id === "f0")).toBe(false);
   });
 });
