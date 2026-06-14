@@ -28,6 +28,9 @@ test("highlight only marks the named team rows", async ({ page }) => {
   await expect(page.locator("[data-team]").first()).toBeVisible();
   const highlighted = page.locator("tr.row--highlight");
   const count = await highlighted.count();
+  // Guard against a no-op pass: USA (Group D) must produce at least one
+  // highlighted row, otherwise a broken highlight feature would slip through.
+  expect(count).toBeGreaterThan(0);
   for (let i = 0; i < count; i++) {
     await expect(highlighted.nth(i)).toHaveAttribute("data-team", "USA");
   }
