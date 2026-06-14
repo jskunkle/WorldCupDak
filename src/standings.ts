@@ -1,4 +1,11 @@
-import type { Team, Game, GroupTable, StandingRow } from "./types";
+import type {
+  Team,
+  Game,
+  GroupTable,
+  StandingRow,
+  FeedMatch,
+  FeedKind,
+} from "./types";
 
 interface Tally {
   gp: number;
@@ -68,4 +75,42 @@ export function computeStandings(teams: Team[], games: Game[]): GroupTable[] {
     rows.forEach((r, i) => (r.rank = i + 1));
     return { group, rows };
   });
+}
+
+const MAX_UPCOMING = 5;
+
+function classify(g: Game, now: Date): FeedKind {
+  if (g.finished) return "finished";
+  return g.kickoff <= now ? "live" : "upcoming";
+}
+
+function toFeedMatch(g: Game, kind: FeedKind): FeedMatch {
+  return {
+    id: g.id,
+    kind,
+    homeName: g.homeName,
+    awayName: g.awayName,
+    homeScore: g.homeScore,
+    awayScore: g.awayScore,
+    kickoff: g.kickoff,
+  };
+}
+
+export function buildScoreFeed(games: Game[], now: Date): FeedMatch[] {
+  const live: FeedMatch[] = [];
+  const finished: FeedMatch[] = [];
+  const upcoming: FeedMatch[] = [];
+
+  for (const g of games) {
+    const kind = classify(g, now);
+    if (kind === "live") live.push(toFeedMatch(g, kind));
+    else if (kind === "finished") finished.push(toFeedMatch(g, kind));
+    else upcoming.push(toFeedMatch(g, kind));
+  }
+
+  live.sort((a, b) => a.kickoff.getTime() - b.kickoff.getTime());
+  finished.sort((a, b) => b.kickoff.getTime() - a.kickoff.getTime()); // most recent first
+  upcoming.sort((a, b) => a.kickoff.getTime() - b.kickoff.getTime());
+
+  return [...live, ...finished, ...upcoming.slice(0, MAX_UPCOMING)];
 }

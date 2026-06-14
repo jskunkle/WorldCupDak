@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { computeStandings } from "../src/standings";
+import { computeStandings, buildScoreFeed } from "../src/standings";
 import type { Team, Game } from "../src/types";
 
 function team(id: string, code: string, group = "A"): Team {
@@ -100,5 +100,68 @@ describe("computeStandings", () => {
     const teams = [team("9", "ENG", "L"), team("1", "MEX", "A")];
     const groups = computeStandings(teams, []);
     expect(groups.map((g) => g.group)).toEqual(["A", "L"]);
+  });
+});
+
+describe("buildScoreFeed", () => {
+  const now = new Date(2026, 5, 14, 18, 0); // June 14 2026, 18:00
+
+  function fg(id: string, opts: Partial<Game>): Game {
+    return {
+      id,
+      homeId: "h",
+      awayId: "a",
+      homeName: "Home",
+      awayName: "Away",
+      homeScore: 0,
+      awayScore: 0,
+      group: "A",
+      matchday: 1,
+      kickoff: new Date(2026, 5, 14, 12, 0),
+      finished: false,
+      isGroupStage: true,
+      ...opts,
+    };
+  }
+
+  it("classifies started-but-unfinished matches as live", () => {
+    const feed = buildScoreFeed(
+      [fg("1", { kickoff: new Date(2026, 5, 14, 17, 0) })],
+      now,
+    );
+    expect(feed[0].kind).toBe("live");
+  });
+
+  it("classifies finished matches as finished", () => {
+    const feed = buildScoreFeed([fg("1", { finished: true })], now);
+    expect(feed[0].kind).toBe("finished");
+  });
+
+  it("classifies future matches as upcoming", () => {
+    const feed = buildScoreFeed(
+      [fg("1", { kickoff: new Date(2026, 5, 14, 21, 0) })],
+      now,
+    );
+    expect(feed[0].kind).toBe("upcoming");
+  });
+
+  it("orders live first, then finished, then upcoming", () => {
+    const feed = buildScoreFeed(
+      [
+        fg("up", { kickoff: new Date(2026, 5, 14, 21, 0) }),
+        fg("fin", { finished: true }),
+        fg("live", { kickoff: new Date(2026, 5, 14, 17, 0) }),
+      ],
+      now,
+    );
+    expect(feed.map((m) => m.kind)).toEqual(["live", "finished", "upcoming"]);
+  });
+
+  it("limits upcoming matches to the next 5", () => {
+    const upcoming = Array.from({ length: 9 }, (_, i) =>
+      fg(`u${i}`, { kickoff: new Date(2026, 5, 15, 12 + i, 0) }),
+    );
+    const feed = buildScoreFeed(upcoming, now);
+    expect(feed.filter((m) => m.kind === "upcoming")).toHaveLength(5);
   });
 });
