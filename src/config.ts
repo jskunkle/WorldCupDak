@@ -88,9 +88,9 @@ export function deriveGrid(
   rows: number | null,
 ): { cols: number; rows: number } {
   const count = Math.max(1, n);
-  if (cols && rows) return { cols, rows };
-  if (cols) return { cols, rows: Math.ceil(count / cols) };
-  if (rows) return { rows, cols: Math.ceil(count / rows) };
+  if (cols !== null && rows !== null) return { cols, rows };
+  if (cols !== null) return { cols, rows: Math.ceil(count / cols) };
+  if (rows !== null) return { cols: Math.ceil(count / rows), rows };
   const c = Math.min(2, count);
   return { cols: c, rows: Math.ceil(count / c) };
 }
