@@ -12,8 +12,25 @@ standings (ESPN-style) and scores, designed to embed as an iframe on a
 
 ## Status
 
-Design stage. See the design spec:
-[`docs/superpowers/specs/2026-06-14-worldcup-dakboard-design.md`](docs/superpowers/specs/2026-06-14-worldcup-dakboard-design.md).
+Implemented. Static site; deploy to Render (see below).
+
+## Develop
+
+```bash
+pnpm install
+pnpm dev        # local dev server
+pnpm test       # unit tests (Vitest)
+pnpm e2e        # end-to-end smoke (Playwright)
+pnpm build      # production build to dist/
+```
+
+## Deploy (Render Static Site)
+
+1. Connect the GitHub repo to Render; it auto-detects `render.yaml`, or set
+   build command `pnpm install && pnpm build` and publish directory `dist/`.
+2. Render serves the site over HTTPS — copy the public URL.
+3. In DAKboard, add a **Website/iframe** block on a Custom Screen, paste the
+   URL, and size it to a landscape region.
 
 ## Stack
 
