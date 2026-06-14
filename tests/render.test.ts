@@ -69,6 +69,38 @@ describe("renderStandings", () => {
   });
 });
 
+describe("renderStandings options", () => {
+  it("renders the full 11-column table by default", () => {
+    const container = document.createElement("div");
+    renderStandings(container, makeGroups());
+    const ths = container.querySelectorAll('[data-group="A"] th');
+    expect(ths).toHaveLength(11);
+  });
+
+  it("renders a compact 5-column table when detail is compact", () => {
+    const container = document.createElement("div");
+    renderStandings(container, makeGroups(), { detail: "compact" });
+    const a = container.querySelector('[data-group="A"]')!;
+    const headers = [...a.querySelectorAll("th")].map((th) => th.textContent);
+    expect(headers).toEqual(["#", "", "Team", "GD", "Pts"]);
+    expect(
+      a.querySelector('[data-team="T1"]')?.querySelectorAll("td"),
+    ).toHaveLength(5);
+  });
+
+  it("adds a highlight class to rows whose code is listed", () => {
+    const container = document.createElement("div");
+    renderStandings(container, makeGroups(), { highlight: ["T1"] });
+    const a = container.querySelector('[data-group="A"]')!;
+    expect(
+      a.querySelector('[data-team="T1"]')?.classList.contains("row--highlight"),
+    ).toBe(true);
+    expect(
+      a.querySelector('[data-team="T2"]')?.classList.contains("row--highlight"),
+    ).toBe(false);
+  });
+});
+
 describe("renderScoreFeed", () => {
   it("renders each match with score and a kind class", () => {
     const container = document.createElement("div");

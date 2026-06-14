@@ -1,4 +1,4 @@
-import type { GroupTable, FeedMatch } from "./types";
+import type { GroupTable, FeedMatch, StandingRow } from "./types";
 
 function el(tag: string, className?: string, text?: string): HTMLElement {
   const node = document.createElement(tag);
@@ -7,11 +7,37 @@ function el(tag: string, className?: string, text?: string): HTMLElement {
   return node;
 }
 
+interface StatColumn {
+  header: string;
+  get: (r: StandingRow) => number;
+  className?: string;
+}
+
+const FULL_STATS: StatColumn[] = [
+  { header: "GP", get: (r) => r.gp },
+  { header: "W", get: (r) => r.w },
+  { header: "D", get: (r) => r.d },
+  { header: "L", get: (r) => r.l },
+  { header: "GF", get: (r) => r.gf },
+  { header: "GA", get: (r) => r.ga },
+  { header: "GD", get: (r) => r.gd },
+  { header: "Pts", get: (r) => r.pts, className: "pts" },
+];
+
+const COMPACT_STATS: StatColumn[] = [
+  { header: "GD", get: (r) => r.gd },
+  { header: "Pts", get: (r) => r.pts, className: "pts" },
+];
+
 export function renderStandings(
   container: HTMLElement,
   groups: GroupTable[],
+  options: { detail?: "compact" | "full"; highlight?: string[] } = {},
 ): void {
   container.replaceChildren(); // in-place refresh: clear then repaint
+
+  const stats = options.detail === "compact" ? COMPACT_STATS : FULL_STATS;
+  const highlight = new Set(options.highlight ?? []);
 
   for (const g of groups) {
     const card = el("section", "group-card");
@@ -20,13 +46,16 @@ export function renderStandings(
 
     const table = el("table", "standings");
     const head = el("tr", "head");
-    ["#", "", "Team", "GP", "W", "D", "L", "GF", "GA", "GD", "Pts"].forEach(
-      (h) => head.appendChild(el("th", undefined, h)),
+    ["#", "", "Team", ...stats.map((s) => s.header)].forEach((h) =>
+      head.appendChild(el("th", undefined, h)),
     );
     table.appendChild(head);
 
     g.rows.forEach((r) => {
-      const tr = el("tr", r.rank <= 2 ? "advancing" : undefined);
+      const classes = ["row"];
+      if (r.rank <= 2) classes.push("advancing");
+      if (highlight.has(r.code)) classes.push("row--highlight");
+      const tr = el("tr", classes.join(" "));
       tr.setAttribute("data-team", r.code);
 
       tr.appendChild(el("td", "rank", String(r.rank)));
@@ -43,10 +72,9 @@ export function renderStandings(
       tr.appendChild(flagCell);
 
       tr.appendChild(el("td", "team", r.code));
-      [r.gp, r.w, r.d, r.l, r.gf, r.ga, r.gd].forEach((v) =>
-        tr.appendChild(el("td", undefined, String(v))),
+      stats.forEach((s) =>
+        tr.appendChild(el("td", s.className, String(s.get(r)))),
       );
-      tr.appendChild(el("td", "pts", String(r.pts)));
       table.appendChild(tr);
     });
 
