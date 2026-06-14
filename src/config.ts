@@ -51,11 +51,14 @@ function csvCodes(raw: string | null): string[] {
 export function parseConfig(search: string): DashboardConfig {
   const p = new URLSearchParams(search);
 
+  // World Cup 2026 has 12 groups: A–L.
   const groupLetters = csvCodes(p.get("groups")).filter((s) =>
     /^[A-L]$/.test(s),
   );
   const groups = [...new Set(groupLetters)];
 
+  // Handled inline (not via the int helpers) because refresh needs
+  // seconds-to-ms conversion plus a floor clamp to MIN_REFRESH_MS.
   const refreshRaw = p.get("refresh");
   const refreshSec =
     refreshRaw === null ? null : Number.parseInt(refreshRaw, 10);

@@ -60,6 +60,7 @@ describe("parseConfig", () => {
   it("parses refresh seconds into ms and clamps to a 30s minimum", () => {
     expect(parseConfig("?refresh=120").refreshMs).toBe(120_000);
     expect(parseConfig("?refresh=10").refreshMs).toBe(30_000);
+    expect(parseConfig("?refresh=0").refreshMs).toBe(30_000);
     expect(parseConfig("?refresh=junk").refreshMs).toBe(90_000);
   });
 
