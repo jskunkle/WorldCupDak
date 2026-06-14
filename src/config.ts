@@ -88,7 +88,11 @@ export function deriveGrid(
   rows: number | null,
 ): { cols: number; rows: number } {
   const count = Math.max(1, n);
-  if (cols !== null && rows !== null) return { cols, rows };
+  // Keep columns authoritative but never let an explicit grid be too small to
+  // hold every group, which would overflow the panel and clip content.
+  if (cols !== null && rows !== null) {
+    return { cols, rows: Math.max(rows, Math.ceil(count / cols)) };
+  }
   if (cols !== null) return { cols, rows: Math.ceil(count / cols) };
   if (rows !== null) return { cols: Math.ceil(count / rows), rows };
   const c = Math.min(2, count);

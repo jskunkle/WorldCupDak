@@ -109,4 +109,9 @@ describe("deriveGrid", () => {
   it("honors both when given", () => {
     expect(deriveGrid(4, 4, 1)).toEqual({ cols: 4, rows: 1 });
   });
+
+  it("expands rows when an explicit grid is too small to hold every group", () => {
+    expect(deriveGrid(12, 1, 1)).toEqual({ cols: 1, rows: 12 });
+    expect(deriveGrid(12, 3, 2)).toEqual({ cols: 3, rows: 4 });
+  });
 });
