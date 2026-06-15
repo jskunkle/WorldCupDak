@@ -83,19 +83,42 @@ export function renderStandings(
   }
 }
 
+const SECONDS_PER_MATCH = 4;
+
+function makeMatch(m: FeedMatch, withId: boolean): HTMLElement {
+  const item = el("span", `match ${m.kind}`);
+  if (withId) item.setAttribute("data-match", m.id);
+  const score = m.kind === "upcoming" ? "vs" : `${m.homeScore}-${m.awayScore}`;
+  item.appendChild(el("span", "home", m.homeName));
+  item.appendChild(el("span", "score", score));
+  item.appendChild(el("span", "away", m.awayName));
+  return item;
+}
+
 export function renderScoreFeed(
   container: HTMLElement,
   feed: FeedMatch[],
 ): void {
   container.replaceChildren();
+
+  const track = el("div", "ticker-track");
+  track.style.setProperty(
+    "--ticker-duration",
+    `${Math.max(1, feed.length) * SECONDS_PER_MATCH}s`,
+  );
+
+  // Two identical copies let the track translate -50% and loop seamlessly.
+  // The primary copy is addressable (data-match); the duplicate is decorative.
+  const primary = el("span", "ticker-copy");
+  const duplicate = el("span", "ticker-copy");
+  duplicate.setAttribute("aria-hidden", "true");
+
   for (const m of feed) {
-    const item = el("span", `match ${m.kind}`);
-    item.setAttribute("data-match", m.id);
-    const score =
-      m.kind === "upcoming" ? "vs" : `${m.homeScore}-${m.awayScore}`;
-    item.appendChild(el("span", "home", m.homeName));
-    item.appendChild(el("span", "score", score));
-    item.appendChild(el("span", "away", m.awayName));
-    container.appendChild(item);
+    primary.appendChild(makeMatch(m, true));
+    duplicate.appendChild(makeMatch(m, false));
   }
+
+  track.appendChild(primary);
+  track.appendChild(duplicate);
+  container.appendChild(track);
 }
