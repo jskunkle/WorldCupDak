@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { normalizeTeams, normalizeGames, fetchData } from "../src/api";
+import { normalizeTeams, normalizeGames, fetchTeams, fetchGames } from "../src/api";
 import type { RawTeam, RawGame } from "../src/types";
 
 const rawTeam: RawTeam = {
@@ -72,37 +72,52 @@ describe("normalizeGames", () => {
   });
 });
 
-describe("fetchData", () => {
-  function fakeResponse(body: unknown, ok = true, status = 200): Response {
-    return {
-      ok,
-      status,
-      json: async () => body,
-    } as unknown as Response;
-  }
+function fakeResponse(body: unknown, ok = true, status = 200): Response {
+  return {
+    ok,
+    status,
+    json: async () => body,
+  } as unknown as Response;
+}
 
-  it("fetches both endpoints and returns normalized data", async () => {
+describe("fetchTeams", () => {
+  it("fetches the teams endpoint and returns normalized teams", async () => {
     const calls: string[] = [];
     const fakeFetch = (async (url: string) => {
       calls.push(url);
-      if (url.includes("/get/teams")) return fakeResponse({ teams: [rawTeam] });
+      return fakeResponse({ teams: [rawTeam] });
+    }) as unknown as typeof fetch;
+
+    const teams = await fetchTeams(fakeFetch);
+    expect(calls).toHaveLength(1);
+    expect(calls[0]).toContain("/get/teams");
+    expect(teams[0].code).toBe("MEX");
+  });
+
+  it("throws when the response is not ok", async () => {
+    const fakeFetch = (async () =>
+      fakeResponse({ teams: [] }, false, 500)) as unknown as typeof fetch;
+    await expect(fetchTeams(fakeFetch)).rejects.toThrow();
+  });
+});
+
+describe("fetchGames", () => {
+  it("fetches the games endpoint and returns normalized games", async () => {
+    const calls: string[] = [];
+    const fakeFetch = (async (url: string) => {
+      calls.push(url);
       return fakeResponse({ games: [finishedGame] });
     }) as unknown as typeof fetch;
 
-    const data = await fetchData(fakeFetch);
-    expect(calls.some((u) => u.includes("/get/teams"))).toBe(true);
-    expect(calls.some((u) => u.includes("/get/games"))).toBe(true);
-    expect(data.teams[0].code).toBe("MEX");
-    expect(data.games[0].homeScore).toBe(2);
+    const games = await fetchGames(fakeFetch);
+    expect(calls).toHaveLength(1);
+    expect(calls[0]).toContain("/get/games");
+    expect(games[0].homeScore).toBe(2);
   });
 
-  it("throws when a response is not ok", async () => {
-    const fakeFetch = (async (url: string) => {
-      if (url.includes("/get/teams"))
-        return fakeResponse({ teams: [] }, false, 500);
-      return fakeResponse({ games: [] });
-    }) as unknown as typeof fetch;
-
-    await expect(fetchData(fakeFetch)).rejects.toThrow();
+  it("throws when the response is not ok", async () => {
+    const fakeFetch = (async () =>
+      fakeResponse({ games: [] }, false, 500)) as unknown as typeof fetch;
+    await expect(fetchGames(fakeFetch)).rejects.toThrow();
   });
 });

@@ -37,28 +37,21 @@ export function normalizeGames(raw: RawGame[]): Game[] {
   }));
 }
 
-export interface ApiData {
-  teams: Team[];
-  games: Game[];
+// I/O wrappers. fetchImpl is injectable for tests.
+export async function fetchTeams(
+  fetchImpl: typeof fetch = fetch,
+): Promise<Team[]> {
+  const res = await fetchImpl(`${BASE_URL}/get/teams`);
+  if (!res.ok) throw new Error(`API error: teams ${res.status}`);
+  const json = (await res.json()) as { teams: RawTeam[] };
+  return normalizeTeams(json.teams);
 }
 
-// I/O wrapper. fetchImpl is injectable for tests.
-export async function fetchData(
+export async function fetchGames(
   fetchImpl: typeof fetch = fetch,
-): Promise<ApiData> {
-  const [teamsRes, gamesRes] = await Promise.all([
-    fetchImpl(`${BASE_URL}/get/teams`),
-    fetchImpl(`${BASE_URL}/get/games`),
-  ]);
-  if (!teamsRes.ok || !gamesRes.ok) {
-    throw new Error(
-      `API error: teams ${teamsRes.status}, games ${gamesRes.status}`,
-    );
-  }
-  const teamsJson = (await teamsRes.json()) as { teams: RawTeam[] };
-  const gamesJson = (await gamesRes.json()) as { games: RawGame[] };
-  return {
-    teams: normalizeTeams(teamsJson.teams),
-    games: normalizeGames(gamesJson.games),
-  };
+): Promise<Game[]> {
+  const res = await fetchImpl(`${BASE_URL}/get/games`);
+  if (!res.ok) throw new Error(`API error: games ${res.status}`);
+  const json = (await res.json()) as { games: RawGame[] };
+  return normalizeGames(json.games);
 }
