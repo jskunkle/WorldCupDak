@@ -47,6 +47,14 @@ describe("cache", () => {
     expect(readCache(HOUR, HOUR)).toBeNull();
   });
 
+  it("returns null when fetchedAt is not a number", () => {
+    localStorage.setItem(
+      "wcdak:cache:v1",
+      JSON.stringify({ teams, games, fetchedAt: "not-a-number" }),
+    );
+    expect(readCache(HOUR, 1000)).toBeNull();
+  });
+
   it("does not throw and returns null when localStorage access throws", () => {
     const getSpy = vi
       .spyOn(Storage.prototype, "getItem")
