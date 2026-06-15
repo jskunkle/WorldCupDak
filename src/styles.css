@@ -40,7 +40,7 @@ body {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  padding: 1vh 1vw;
+  padding: 1vh 1.8vw 1vh 1vw;
   gap: 1vh;
 }
 
@@ -126,7 +126,6 @@ body {
   border-radius: 8px;
   padding: 0.8vh 1vw;
   display: flex;
-  gap: 1.6vw;
   align-items: center;
   overflow: hidden;
   white-space: nowrap;
@@ -138,6 +137,7 @@ body {
   gap: 0.4em;
   align-items: baseline;
   font-size: clamp(11px, 1.6vh, 18px);
+  margin-right: 1.6vw;
 }
 .match .score {
   font-weight: 700;
@@ -179,4 +179,31 @@ body {
 }
 #app[data-fit="on"] .match {
   font-size: 1.05rem;
+}
+
+/* Live-scores ticker: two identical copies scroll left as one track and loop
+   seamlessly at -50%. Duration is set per-render from the match count for a
+   roughly constant speed. .scores keeps overflow:hidden so the doubled track
+   is clipped and does not inflate the layout width (fit measurement stays correct). */
+.ticker-track {
+  display: inline-flex;
+  flex: none;
+  animation: ticker-scroll var(--ticker-duration, 40s) linear infinite;
+  will-change: transform;
+}
+.ticker-copy {
+  display: inline-flex;
+}
+@keyframes ticker-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ticker-track {
+    animation: none;
+  }
 }

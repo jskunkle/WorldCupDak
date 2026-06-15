@@ -140,3 +140,67 @@ describe("renderScoreFeed", () => {
     expect(m.querySelector(".score")?.textContent).toBe("vs");
   });
 });
+
+describe("renderScoreFeed ticker", () => {
+  const feed: FeedMatch[] = [
+    {
+      id: "1",
+      kind: "live",
+      homeName: "USA",
+      awayName: "PAR",
+      homeScore: 4,
+      awayScore: 1,
+      kickoff: new Date(2026, 5, 14, 17, 0),
+    },
+    {
+      id: "2",
+      kind: "finished",
+      homeName: "GER",
+      awayName: "AUS",
+      homeScore: 2,
+      awayScore: 0,
+      kickoff: new Date(2026, 5, 14, 12, 0),
+    },
+    {
+      id: "3",
+      kind: "upcoming",
+      homeName: "BRA",
+      awayName: "CRO",
+      homeScore: 0,
+      awayScore: 0,
+      kickoff: new Date(2026, 5, 20, 12, 0),
+    },
+  ];
+
+  it("renders two copies of the feed inside a ticker track", () => {
+    const container = document.createElement("div");
+    renderScoreFeed(container, feed);
+    const track = container.querySelector(".ticker-track")!;
+    expect(track).toBeTruthy();
+    expect(track.querySelectorAll(".ticker-copy")).toHaveLength(2);
+    expect(track.querySelectorAll(".match")).toHaveLength(6); // 2 copies x 3
+  });
+
+  it("puts data-match only on the primary copy", () => {
+    const container = document.createElement("div");
+    renderScoreFeed(container, feed);
+    expect(container.querySelectorAll("[data-match]")).toHaveLength(3);
+  });
+
+  it("marks the duplicate copy aria-hidden and gives it no data-match", () => {
+    const container = document.createElement("div");
+    renderScoreFeed(container, feed);
+    const hidden = container.querySelectorAll(
+      '.ticker-copy[aria-hidden="true"]',
+    );
+    expect(hidden).toHaveLength(1);
+    expect(hidden[0].querySelectorAll("[data-match]")).toHaveLength(0);
+  });
+
+  it("scales --ticker-duration with the match count", () => {
+    const container = document.createElement("div");
+    renderScoreFeed(container, feed);
+    const track = container.querySelector(".ticker-track") as HTMLElement;
+    expect(track.style.getPropertyValue("--ticker-duration")).toBe("12s"); // 3 * 4s
+  });
+});
