@@ -1,11 +1,16 @@
-import { fetchData } from "./api";
+import { fetchTeams, fetchGames } from "./api";
 import { computeStandings, buildScoreFeed, filterGroups } from "./standings";
 import { renderStandings, renderScoreFeed } from "./render";
 import { parseConfig, deriveGrid } from "./config";
 import { fitToViewport } from "./fit";
-import type { Snapshot } from "./types";
+import { needsTeamsRefresh } from "./refresh-policy";
+import { readCache, writeCache } from "./cache";
+import type { Snapshot, Team, Game } from "./types";
 
 const config = parseConfig(window.location.search);
+
+const TEAMS_MAX_AGE_MS = 3_600_000; // refresh teams at most hourly
+const CACHE_MAX_AGE_MS = 3_600_000; // use cached data for instant paint if < 1h old
 
 const appEl = document.getElementById("app")!;
 const groupsEl = document.getElementById("groups")!;
@@ -16,20 +21,47 @@ document.documentElement.setAttribute("data-theme", config.theme);
 appEl.setAttribute("data-fit", config.fit ? "on" : "off");
 if (!config.scores) scoresEl.style.display = "none";
 
+let cachedTeams: Team[] | null = null;
+let teamsFetchedAt: number | null = null;
 let lastGood: Snapshot | null = null;
 let timer: number | undefined;
 let resizeTimer: number | undefined;
 
+function buildSnapshot(teams: Team[], games: Game[]): Snapshot {
+  return {
+    groups: filterGroups(computeStandings(teams, games), config.groups),
+    feed: buildScoreFeed(games, new Date(), {
+      maxUpcoming: config.upcoming,
+      maxFinished: config.finished,
+    }),
+  };
+}
+
 async function refresh(): Promise<void> {
   try {
-    const { teams, games } = await fetchData();
-    lastGood = {
-      groups: filterGroups(computeStandings(teams, games), config.groups),
-      feed: buildScoreFeed(games, new Date(), {
-        maxUpcoming: config.upcoming,
-        maxFinished: config.finished,
-      }),
-    };
+    const games = await fetchGames();
+    const ids = cachedTeams ? new Set(cachedTeams.map((t) => t.id)) : null;
+    if (
+      needsTeamsRefresh(
+        ids,
+        teamsFetchedAt,
+        games,
+        Date.now(),
+        TEAMS_MAX_AGE_MS,
+      )
+    ) {
+      try {
+        cachedTeams = await fetchTeams();
+        teamsFetchedAt = Date.now();
+      } catch (err) {
+        // No teams at all → can't render; fail this cycle. Otherwise reuse cache.
+        if (cachedTeams === null) throw err;
+        console.error("Teams refresh failed; reusing cached teams.", err);
+      }
+    }
+    const teams = cachedTeams!;
+    lastGood = buildSnapshot(teams, games);
+    writeCache(teams, games, Date.now());
     paint(lastGood);
   } catch (err) {
     console.error("Refresh failed; keeping last-good data.", err);
@@ -48,6 +80,16 @@ function paint(s: Snapshot): void {
   });
   if (config.scores) renderScoreFeed(scoresEl, s.feed);
   if (config.fit) fitToViewport(appEl);
+}
+
+// Paint instantly from a fresh-enough cache before the first network round-trip.
+function seedFromCache(): void {
+  const cached = readCache(CACHE_MAX_AGE_MS, Date.now());
+  if (!cached) return;
+  cachedTeams = cached.teams;
+  teamsFetchedAt = Date.now();
+  lastGood = buildSnapshot(cached.teams, cached.games);
+  paint(lastGood);
 }
 
 function start(): void {
@@ -76,5 +118,6 @@ window.addEventListener("resize", () => {
   resizeTimer = window.setTimeout(() => fitToViewport(appEl), 150);
 });
 
+seedFromCache();
 void refresh();
 start();
