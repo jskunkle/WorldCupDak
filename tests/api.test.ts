@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { normalizeTeams, normalizeGames, fetchTeams, fetchGames } from "../src/api";
+import {
+  normalizeTeams,
+  normalizeGames,
+  fetchTeams,
+  fetchGames,
+} from "../src/api";
 import type { RawTeam, RawGame } from "../src/types";
 
 const rawTeam: RawTeam = {
