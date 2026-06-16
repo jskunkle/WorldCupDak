@@ -1,87 +1,102 @@
 # World Cup 2026 DAKboard — Tasks
 
-Plan: `docs/superpowers/plans/2026-06-14-worldcup-dakboard.md`
+Plan: `docs/superpowers/plans/2026-06-16-data-proxy-worker.md`
+Spec: `docs/superpowers/specs/2026-06-16-data-proxy-worker-design.md`
 
-All tasks complete. 27 unit tests + 1 Playwright e2e passing; build clean.
+Cloudflare Worker data layer with worldcup26.ir → football-data.org failover.
 
-## Task 1 — Project scaffold
+## Task 1 — Worker scaffolding & config
 
-- [x] Create `package.json`
-- [x] Create `tsconfig.json`
-- [x] Create `vite.config.ts` (Vite + Vitest/jsdom)
-- [x] Create `index.html`
-- [x] Create placeholder `src/main.ts`
-- [x] `pnpm install` && `pnpm build` verifies
-- [x] Commit
+- [ ] `pnpm add -D wrangler @cloudflare/workers-types`
+- [ ] Add `worker:typecheck` / `worker:dev` / `worker:deploy` scripts to `package.json`
+- [ ] Add `worker/**/*.test.ts` to Vitest `include` in `vite.config.ts`
+- [ ] Create `worker/tsconfig.json`
+- [ ] Create `worker/wrangler.toml` (KV binding, cron, compat date)
+- [ ] Verify `pnpm wrangler --version`
+- [ ] Commit
 
-## Task 2 — Types
+## Task 2 — Content-hash util
 
-- [x] Create `src/types.ts` (Raw + domain types)
-- [x] `tsc --noEmit` passes
-- [x] Commit
+- [ ] Write failing `worker/hash.test.ts`
+- [ ] Verify it fails
+- [ ] Implement `worker/hash.ts` (djb2)
+- [ ] Verify it passes
+- [ ] Commit
 
-## Task 3 — API normalization
+## Task 3 — Timeout util
 
-- [x] Write failing tests in `tests/api.test.ts`
-- [x] Verify they fail
-- [x] Implement `normalizeTeams`, `normalizeGames`, `fetchData` in `src/api.ts`
-- [x] Verify tests pass
-- [x] Commit
+- [ ] Write failing `worker/timeout.test.ts`
+- [ ] Verify it fails
+- [ ] Implement `worker/timeout.ts` (`withTimeout`)
+- [ ] Verify it passes
+- [ ] Commit
 
-## Task 4 — computeStandings
+## Task 4 — Source interface & failover
 
-- [x] Write failing tests in `tests/standings.test.ts`
-- [x] Verify they fail
-- [x] Implement `computeStandings` in `src/standings.ts`
-- [x] Verify tests pass
-- [x] Commit
+- [ ] Create `worker/sources/source.ts` (`Source`, `SourceSnapshot`)
+- [ ] Write failing `worker/failover.test.ts`
+- [ ] Verify it fails
+- [ ] Implement `worker/failover.ts` (`fetchSnapshotWithFailover`)
+- [ ] Verify it passes
+- [ ] Commit
 
-## Task 5 — buildScoreFeed
+## Task 5 — worldcup26 adapter (move normalizers)
 
-- [x] Append failing tests to `tests/standings.test.ts`
-- [x] Verify they fail
-- [x] Implement `buildScoreFeed` in `src/standings.ts`
-- [x] Verify tests pass
-- [x] Commit
+- [ ] Write failing `worker/sources/worldcup26.test.ts` (ported from `tests/api.test.ts`)
+- [ ] Verify it fails
+- [ ] Implement `worker/sources/worldcup26.ts` (normalizers + `worldcup26Source`)
+- [ ] Verify it passes
+- [ ] Commit
 
-## Task 6 — Render layer
+## Task 6 — football-data.org adapter
 
-- [x] Write failing tests in `tests/render.test.ts`
-- [x] Verify they fail
-- [x] Implement `renderStandings`, `renderScoreFeed` in `src/render.ts`
-- [x] Verify tests pass
-- [x] Commit
+- [ ] Write failing `worker/sources/football-data.test.ts` (fixtures + group derivation)
+- [ ] Verify it fails
+- [ ] Implement `worker/sources/football-data.ts` (normalizers + `createFootballDataSource`)
+- [ ] Verify it passes
+- [ ] Commit
 
-## Task 7 — Orchestration
+## Task 7 — Refresh orchestration
 
-- [x] Replace `src/main.ts` (load, 90s refresh, last-good, visibility pause)
-- [x] `pnpm build` + `pnpm test` pass
-- [x] Manual `pnpm dev` smoke against live API
-- [x] Commit
+- [ ] Write failing `worker/refresh.test.ts` (fake KV + fake sources)
+- [ ] Verify it fails
+- [ ] Implement `worker/refresh.ts` (`refreshSnapshot`, `KVStore`, hash-gated write)
+- [ ] Verify it passes
+- [ ] Commit
 
-## Task 8 — Dark theme
+## Task 8 — Request handler
 
-- [x] Create `src/styles.css`
-- [x] Visual check via `pnpm dev`
-- [x] Commit
+- [ ] Write failing `worker/handler.test.ts`
+- [ ] Verify it fails
+- [ ] Implement `worker/handler.ts` (routing, CORS, cold populate, 503)
+- [ ] Verify it passes
+- [ ] Commit
 
-## Task 9 — Playwright e2e
+## Task 9 — Worker entry point
 
-- [x] Create `playwright.config.ts`
-- [x] Create `e2e/dashboard.spec.ts`
-- [x] `playwright install chromium` && `pnpm e2e` passes
-- [x] Commit
+- [ ] Implement `worker/index.ts` (`Env`, `fetch`, `scheduled`)
+- [ ] `pnpm worker:typecheck` passes
+- [ ] `pnpm test` (full suite) passes
+- [ ] Commit
 
-## Task 10 — Deploy config + docs
+## Task 10 — Repoint client at Worker
 
-- [x] Create `render.yaml`
-- [x] Update `README.md`
-- [x] `pnpm format`, `pnpm test`, `pnpm build`
-- [x] Commit
+- [ ] Rewrite `tests/api.test.ts` for the new contract; verify it fails
+- [ ] Rewrite `src/api.ts` (drop normalization, revive kickoff, `VITE_API_BASE`)
+- [ ] Verify `tests/api.test.ts` passes
+- [ ] `pnpm test && pnpm build` clean (add `src/vite-env.d.ts` if needed)
+- [ ] Commit
 
-## Post-implementation — code review fixes
+## Task 11 — Deploy & wire-up (manual)
 
-- [x] Cap finished score feed (most recent 8)
-- [x] Harden score coercion against NaN
-- [x] Grid: exact 6 rows + truly pinned strip
-- [x] Add tests: fetchData, GF tiebreaker, finished cap, upcoming "vs", flag fallback
+- [ ] `! pnpm wrangler login`
+- [ ] Create KV namespace; put its id in `worker/wrangler.toml`
+- [ ] `! pnpm wrangler secret put FOOTBALL_DATA_TOKEN`
+- [ ] Local smoke test (`pnpm worker:dev` + curl)
+- [ ] `pnpm worker:deploy`; note the Worker URL
+- [ ] Add `VITE_API_BASE` to `render.yaml`; rebuild
+- [ ] Verify deployed Worker via curl
+- [ ] Browser smoke test (empty-cache reload paints fast)
+- [ ] Rotate the football-data.org token; re-set secret; redeploy
+- [ ] Update `CLAUDE.md` / `README.md`; `pnpm format`
+- [ ] Commit
