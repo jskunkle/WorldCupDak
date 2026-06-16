@@ -30,8 +30,18 @@ const matchesRes = {
 
 const teamsRes = {
   teams: [
-    { id: 769, name: "Mexico", tla: "MEX", crest: "https://crests.football-data.org/769.svg" },
-    { id: 758, name: "Uruguay", tla: "URU", crest: "https://crests.football-data.org/758.svg" },
+    {
+      id: 769,
+      name: "Mexico",
+      tla: "MEX",
+      crest: "https://crests.football-data.org/769.svg",
+    },
+    {
+      id: 758,
+      name: "Uruguay",
+      tla: "URU",
+      crest: "https://crests.football-data.org/758.svg",
+    },
   ],
 };
 

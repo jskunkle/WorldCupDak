@@ -10,13 +10,17 @@ function reviveGames(games: Game[]): Game[] {
   return games.map((g) => ({ ...g, kickoff: new Date(g.kickoff) }));
 }
 
-export async function fetchTeams(fetchImpl: typeof fetch = fetch): Promise<Team[]> {
+export async function fetchTeams(
+  fetchImpl: typeof fetch = fetch,
+): Promise<Team[]> {
   const res = await fetchImpl(`${BASE_URL}/get/teams`);
   if (!res.ok) throw new Error(`API error: teams ${res.status}`);
   return (await res.json()) as Team[];
 }
 
-export async function fetchGames(fetchImpl: typeof fetch = fetch): Promise<Game[]> {
+export async function fetchGames(
+  fetchImpl: typeof fetch = fetch,
+): Promise<Game[]> {
   const res = await fetchImpl(`${BASE_URL}/get/games`);
   if (!res.ok) throw new Error(`API error: games ${res.status}`);
   return reviveGames((await res.json()) as Game[]);

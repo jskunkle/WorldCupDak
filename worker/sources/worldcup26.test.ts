@@ -53,15 +53,22 @@ describe("normalizeGames", () => {
   });
 
   it("treats finished other than 'TRUE' as not finished", () => {
-    expect(normalizeGames([{ ...finishedGame, finished: "FALSE" }])[0].finished).toBe(false);
+    expect(
+      normalizeGames([{ ...finishedGame, finished: "FALSE" }])[0].finished,
+    ).toBe(false);
   });
 
   it("marks non-group types as not group stage", () => {
-    expect(normalizeGames([{ ...finishedGame, type: "round_of_32" }])[0].isGroupStage).toBe(false);
+    expect(
+      normalizeGames([{ ...finishedGame, type: "round_of_32" }])[0]
+        .isGroupStage,
+    ).toBe(false);
   });
 
   it("coerces malformed numeric fields to 0 instead of NaN", () => {
-    const [g] = normalizeGames([{ ...finishedGame, home_score: "null", away_score: "" }]);
+    const [g] = normalizeGames([
+      { ...finishedGame, home_score: "null", away_score: "" },
+    ]);
     expect(g.homeScore).toBe(0);
     expect(g.awayScore).toBe(0);
   });

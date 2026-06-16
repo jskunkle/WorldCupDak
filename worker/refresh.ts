@@ -53,7 +53,19 @@ export async function refreshSnapshot(
 ): Promise<RefreshResult | null> {
   const snap = await fetchSnapshotWithFailover(sources, TIMEOUT_MS);
   if (!snap) return null;
-  const teamsWritten = await writeIfChanged(kv, "teams", snap.teams, snap.source, now);
-  const gamesWritten = await writeIfChanged(kv, "games", snap.games, snap.source, now);
+  const teamsWritten = await writeIfChanged(
+    kv,
+    "teams",
+    snap.teams,
+    snap.source,
+    now,
+  );
+  const gamesWritten = await writeIfChanged(
+    kv,
+    "games",
+    snap.games,
+    snap.source,
+    now,
+  );
   return { source: snap.source, teamsWritten, gamesWritten };
 }

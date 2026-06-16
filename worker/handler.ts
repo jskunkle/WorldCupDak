@@ -26,7 +26,10 @@ function jsonError(status: number, message: string): Response {
   });
 }
 
-export async function handleRequest(request: Request, deps: HandlerDeps): Promise<Response> {
+export async function handleRequest(
+  request: Request,
+  deps: HandlerDeps,
+): Promise<Response> {
   if (request.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: CORS });
   }

@@ -5,9 +5,12 @@ import type { Source, SourceSnapshot } from "./sources/source";
 
 const ORIGIN = "https://worldcupdak.onrender.com";
 
-function fakeKV(seed?: Record<string, KvRecord>): KVStore & { store: Map<string, string> } {
+function fakeKV(
+  seed?: Record<string, KvRecord>,
+): KVStore & { store: Map<string, string> } {
   const store = new Map<string, string>();
-  for (const [k, v] of Object.entries(seed ?? {})) store.set(k, JSON.stringify(v));
+  for (const [k, v] of Object.entries(seed ?? {}))
+    store.set(k, JSON.stringify(v));
   return {
     store,
     get: async (k) => store.get(k) ?? null,
@@ -34,9 +37,17 @@ function deps(kv: KVStore, sources: Source[]) {
 describe("handleRequest", () => {
   it("serves teams from KV with CORS + source headers", async () => {
     const kv = fakeKV({
-      teams: { data: SNAP.teams, source: "primary", fetchedAt: 1000, hash: "abc" },
+      teams: {
+        data: SNAP.teams,
+        source: "primary",
+        fetchedAt: 1000,
+        hash: "abc",
+      },
     });
-    const res = await handleRequest(new Request(`${ORIGIN}/get/teams`), deps(kv, [okSource]));
+    const res = await handleRequest(
+      new Request(`${ORIGIN}/get/teams`),
+      deps(kv, [okSource]),
+    );
     expect(res.status).toBe(200);
     expect(res.headers.get("Access-Control-Allow-Origin")).toBe(ORIGIN);
     expect(res.headers.get("X-Data-Source")).toBe("primary");
@@ -53,13 +64,19 @@ describe("handleRequest", () => {
   });
 
   it("404s an unknown path", async () => {
-    const res = await handleRequest(new Request(`${ORIGIN}/nope`), deps(fakeKV(), [okSource]));
+    const res = await handleRequest(
+      new Request(`${ORIGIN}/nope`),
+      deps(fakeKV(), [okSource]),
+    );
     expect(res.status).toBe(404);
   });
 
   it("populates cold KV inline, then serves the requested key", async () => {
     const kv = fakeKV(); // empty
-    const res = await handleRequest(new Request(`${ORIGIN}/get/teams`), deps(kv, [okSource]));
+    const res = await handleRequest(
+      new Request(`${ORIGIN}/get/teams`),
+      deps(kv, [okSource]),
+    );
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual(SNAP.teams);
     expect(kv.store.has("games")).toBe(true); // both keys written during populate

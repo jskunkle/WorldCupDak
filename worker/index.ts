@@ -24,11 +24,17 @@ export default {
     });
   },
 
-  async scheduled(_event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
+  async scheduled(
+    _event: ScheduledEvent,
+    env: Env,
+    ctx: ExecutionContext,
+  ): Promise<void> {
     ctx.waitUntil(
-      refreshSnapshot(sourcesFor(env), env.WCDAK_KV as unknown as KVStore, Date.now()).then(
-        () => undefined,
-      ),
+      refreshSnapshot(
+        sourcesFor(env),
+        env.WCDAK_KV as unknown as KVStore,
+        Date.now(),
+      ).then(() => undefined),
     );
   },
 };

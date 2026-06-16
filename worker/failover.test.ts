@@ -18,17 +18,26 @@ function fail(name: string): Source {
 
 describe("fetchSnapshotWithFailover", () => {
   it("returns the first source's snapshot tagged with its name", async () => {
-    const result = await fetchSnapshotWithFailover([ok("primary"), ok("fallback")], 1000);
+    const result = await fetchSnapshotWithFailover(
+      [ok("primary"), ok("fallback")],
+      1000,
+    );
     expect(result).toEqual({ ...SNAP, source: "primary" });
   });
 
   it("falls back to the next source when the primary throws", async () => {
-    const result = await fetchSnapshotWithFailover([fail("primary"), ok("fallback")], 1000);
+    const result = await fetchSnapshotWithFailover(
+      [fail("primary"), ok("fallback")],
+      1000,
+    );
     expect(result).toEqual({ ...SNAP, source: "fallback" });
   });
 
   it("returns null when every source fails", async () => {
-    const result = await fetchSnapshotWithFailover([fail("primary"), fail("fallback")], 1000);
+    const result = await fetchSnapshotWithFailover(
+      [fail("primary"), fail("fallback")],
+      1000,
+    );
     expect(result).toBeNull();
   });
 });

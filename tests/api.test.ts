@@ -44,7 +44,8 @@ describe("fetchTeams", () => {
   });
 
   it("throws when the response is not ok", async () => {
-    const fakeFetch = (async () => fakeResponse([], false, 500)) as unknown as typeof fetch;
+    const fakeFetch = (async () =>
+      fakeResponse([], false, 500)) as unknown as typeof fetch;
     await expect(fetchTeams(fakeFetch)).rejects.toThrow();
   });
 });
@@ -65,7 +66,8 @@ describe("fetchGames", () => {
   });
 
   it("throws when the response is not ok", async () => {
-    const fakeFetch = (async () => fakeResponse([], false, 500)) as unknown as typeof fetch;
+    const fakeFetch = (async () =>
+      fakeResponse([], false, 500)) as unknown as typeof fetch;
     await expect(fetchGames(fakeFetch)).rejects.toThrow();
   });
 });
