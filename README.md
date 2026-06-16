@@ -18,11 +18,19 @@ Implemented. Static site; deploy to Render (see below).
 
 ```bash
 pnpm install
-pnpm dev        # local dev server
-pnpm test       # unit tests (Vitest)
-pnpm e2e        # end-to-end smoke (Playwright)
-pnpm build      # production build to dist/
+pnpm dev              # local dev server
+pnpm test             # unit tests (Vitest) — includes worker/**
+pnpm e2e              # end-to-end smoke (Playwright)
+pnpm build            # production build to dist/
+
+pnpm worker:dev       # run the data Worker locally (wrangler dev)
+pnpm worker:typecheck # type-check the Worker
+pnpm worker:deploy    # deploy the Worker to Cloudflare
 ```
+
+The client reads its API base from `VITE_API_BASE` (the deployed Worker URL); for
+local dev it falls back to a default. Point it at `pnpm worker:dev` (default
+`http://localhost:8787`) when developing against a local Worker.
 
 ## URL parameters
 
@@ -54,6 +62,8 @@ Invalid or unknown parameters are ignored and fall back to defaults — the dash
 
 1. Connect the GitHub repo to Render; it auto-detects `render.yaml`, or set
    build command `pnpm install && pnpm build` and publish directory `dist/`.
+   Set the `VITE_API_BASE` env var to the deployed Worker URL (see the data
+   layer section above) so the build points the client at the Worker.
 2. Render serves the site over HTTPS — copy the public URL.
 3. In DAKboard, add a **Website/iframe** block on a Custom Screen, paste the
    URL, and size it to a landscape region.
@@ -62,8 +72,37 @@ Invalid or unknown parameters are ignored and fall back to defaults — the dash
 
 TypeScript + Vite (no UI framework). Vitest for unit tests, Playwright for e2e.
 
-## Data source
+## Data layer (Cloudflare Worker)
 
-[worldcup26.ir](https://worldcup26.ir) — called directly from the browser
-(public, CORS-open, no token). Standings are computed locally because the API's
-own standings aggregation returns zeros.
+The dashboard does **not** call the data sources directly. A small Cloudflare
+Worker (`worker/`) sits in front of them as a caching + failover layer, and the
+client fetches normalized JSON from it (`/get/teams`, `/get/games`).
+
+- **Primary source:** [worldcup26.ir](https://worldcup26.ir) (public, no token).
+- **Fallback source:** [football-data.org](https://www.football-data.org) v4,
+  competition `WC` (keyed — the token is a Worker secret, never in the client).
+- A **Cron trigger** refreshes a full snapshot (teams + games from the _same_
+  source, so team ids match) into Workers KV, writing only when the content
+  changed (a content-hash gate keeps KV writes within the free tier).
+- The `fetch` handler serves KV instantly with CORS locked to the Render origin,
+  so a slow upstream never blanks the dashboard. Cold KV is populated inline on
+  the first request. If every source is down and KV is empty it returns `503`,
+  and the client's `localStorage` cache keeps the last paint up.
+
+Standings are computed client-side because the upstream standings aggregation is
+unreliable.
+
+### Deploying the Worker
+
+```bash
+pnpm wrangler login
+pnpm wrangler kv namespace create WCDAK_KV --config worker/wrangler.toml   # paste id into worker/wrangler.toml
+pnpm wrangler secret put FOOTBALL_DATA_TOKEN --config worker/wrangler.toml # paste token
+pnpm worker:deploy                                                         # note the deployed URL
+```
+
+Then set `VITE_API_BASE` to the deployed Worker URL in `render.yaml` (or the
+Render dashboard) and redeploy the static site.
+
+> Design notes: `docs/superpowers/specs/2026-06-16-data-proxy-worker-design.md`
+> and `docs/superpowers/plans/2026-06-16-data-proxy-worker.md`.
