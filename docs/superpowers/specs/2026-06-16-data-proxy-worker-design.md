@@ -46,10 +46,11 @@ A single adapter interface, one implementation per source:
 ```
 interface Source {
   name: string;
-  fetchTeams(env): Promise<Team[]>;
-  fetchGames(env): Promise<Game[]>;
+  fetchSnapshot(): Promise<{ teams: Team[]; games: Game[] }>;
 }
 ```
+
+Each adapter's `fetchSnapshot` fetches that source's two endpoints and returns both normalized arrays together, so teams and games always share one id space (see §3).
 
 - `worldcup26.ts` — primary. Reuses the existing normalization logic (`name_en`→`name`, `fifa_code`→`code`, `local_date` "MM/DD/YYYY HH:mm" → `Date`, `finished === "TRUE"` → boolean, etc.), moved out of the client `src/api.ts` into a shared module the Worker imports.
 - `football-data.ts` — fallback. Reads the token from `env.FOOTBALL_DATA_TOKEN` (a Worker secret — see §8), sends it as `X-Auth-Token`. Fetches the two `WC` endpoints and normalizes to our domain types per the mapping below.
@@ -66,7 +67,7 @@ interface Source {
 | `homeId` / `awayId` | `String(match.homeTeam.id)` / `String(match.awayTeam.id)` |
 | `homeName` / `awayName` | `match.homeTeam.name` / `match.awayTeam.name` |
 | `homeScore` / `awayScore` | `match.score.fullTime.home ?? 0` / `.away ?? 0` |
-| `group` | `match.group` `"GROUP_A"` → `"A"` (strip `"GROUP_"`); `null` for knockout |
+| `group` | `match.group` `"GROUP_A"` → `"A"` (strip `"GROUP_"`); `""` for knockout (domain `Game.group` is `string`) |
 | `matchday` | `match.matchday` |
 | `kickoff` | `new Date(match.utcDate)` (ISO UTC instant) |
 | `finished` | `match.status === "FINISHED"` |
@@ -86,20 +87,22 @@ Note: football-data's `kickoff` is a true UTC instant, whereas the worldcup26 ad
 
 ## 3. Scheduled refresher — `worker/refresh.ts`
 
-On each Cron tick, per dataset (games every tick; teams gated like the client does today — hourly or on unknown-team-id):
+**Source consistency:** worldcup26 and football-data use different team-id spaces (e.g. `"1"` vs `769`), so teams and games must come from the **same source within a single refresh** or their ids won't join. Failover therefore selects one source that supplies a full snapshot (both teams and games), not one source per dataset. Teams are fetched every tick (not hourly-gated) so they always match that tick's games; the free-tier KV write cap is protected by the per-key content-hash write-gate below, which is the actual constrained resource.
 
-1. Try **primary** with a 25s `AbortController` timeout.
-2. On non-2xx, network error, or timeout → try **fallback**.
-3. If a source returns data, compute a change key: prefer the primary's `ETag` response header (observed: `ETag: W/"…"`); otherwise a hash of the normalized payload. Compare to the change key stored alongside the last KV record.
-4. **Write KV only if the change key differs.** Store `{ data, source, fetchedAt, changeKey }`.
-5. If both sources fail, write nothing — the prior KV record stands.
+Each source exposes `fetchSnapshot(): Promise<{ teams: Team[]; games: Game[] }>`. On each Cron tick:
+
+1. `fetchSnapshotWithFailover([worldcup26, footballData], 25_000)` — try the primary's `fetchSnapshot` with a 25s timeout; on non-2xx, network error, or timeout, try the fallback. Returns `{ teams, games, source }` or `null` if all fail.
+2. If `null`, write nothing — the prior KV records stand.
+3. Otherwise, for each of the `teams` and `games` keys: compute a content hash of the normalized array; read the existing KV record's stored `hash`; **write only if the hash differs.** Each record is `{ data, source, fetchedAt, hash }`.
+
+Per-key content-hash gating means writes happen only when teams or scores actually change — near-zero outside live matches — staying under the 1,000/day free cap.
 
 KV keys: `teams` and `games`. Per-minute cron that writes only on change keeps writes far under 1,000/day outside live-match windows.
 
 ## 4. Request handler — `worker/handler.ts`
 
 - `GET /get/teams` / `GET /get/games`: read the KV record, return `data` as JSON with `Access-Control-Allow-Origin: https://worldcupdak.onrender.com`, a short `Cache-Control`, and an `X-Data-Source` / `X-Fetched-At` header for observability. Handle the CORS preflight `OPTIONS` with the same allowed origin.
-- **Cold KV** (before the first cron has run): do a one-time inline populate (primary→fallback) so the first-ever request isn't empty.
+- **Cold KV** (before the first cron has run): do a one-time inline `fetchSnapshotWithFailover`, write both KV records, then serve the requested one — so the first-ever request isn't empty.
 - **Both sources down and KV empty:** `503` with a small JSON error body. The client's existing `localStorage` cache keeps the last paint up, so the wall display does not go blank.
 - Includes `fetchedAt` in the payload so the client can *optionally* surface staleness later (not built now — YAGNI).
 
