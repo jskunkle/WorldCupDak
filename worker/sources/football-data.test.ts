@@ -91,3 +91,26 @@ describe("normalizeFdTeams", () => {
     expect(normalizeFdTeams(teamsRes, matchesRes)[1].group).toBe("");
   });
 });
+
+describe("normalizeFdGames isGroupStage derivation", () => {
+  it("marks group-stage from a populated group, not the stage literal", () => {
+    // A populated group with an unexpected stage label must still be group-stage.
+    const res = {
+      matches: [
+        {
+          id: 1,
+          utcDate: "2026-06-12T16:00:00Z",
+          status: "SCHEDULED",
+          matchday: 2,
+          stage: "LEAGUE_STAGE",
+          group: "GROUP_C",
+          homeTeam: { id: 800, name: "A" },
+          awayTeam: { id: 801, name: "B" },
+          score: { fullTime: { home: null, away: null } },
+        },
+      ],
+    };
+    expect(normalizeFdGames(res)[0].isGroupStage).toBe(true);
+    expect(normalizeFdGames(res)[0].group).toBe("C");
+  });
+});

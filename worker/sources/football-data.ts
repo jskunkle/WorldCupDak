@@ -11,7 +11,7 @@ interface FdMatch {
   id: number;
   utcDate: string;
   status: string;
-  matchday: number;
+  matchday: number | null;
   stage: string;
   group: string | null;
   homeTeam: FdTeamRef;
@@ -48,7 +48,10 @@ export function normalizeFdGames(res: FdMatchesResponse): Game[] {
     matchday: m.matchday ?? 0,
     kickoff: new Date(m.utcDate),
     finished: m.status === "FINISHED",
-    isGroupStage: m.stage === "GROUP_STAGE",
+    // `group` is populated only for group-phase matches and null for every
+    // knockout stage (verified against the live v4 WC feed), so it's a more
+    // robust group-stage signal than trusting the `stage` enum literal.
+    isGroupStage: m.group != null,
   }));
 }
 
