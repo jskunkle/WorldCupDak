@@ -1,57 +1,23 @@
-import type { RawTeam, RawGame, Team, Game } from "./types";
+import type { Team, Game } from "./types";
 
-const BASE_URL = "https://worldcup26.ir";
+// Points at the Cloudflare Worker data layer. Set VITE_API_BASE in the Render
+// build env to the deployed Worker URL; the fallback is for local dev.
+const BASE_URL =
+  import.meta.env.VITE_API_BASE ?? "https://worldcupdak-data.workers.dev";
 
-export function normalizeTeams(raw: RawTeam[]): Team[] {
-  return raw.map((t) => ({
-    id: t.id,
-    name: t.name_en,
-    code: t.fifa_code,
-    flagUrl: t.flag,
-    group: t.groups,
-  }));
+function reviveGames(games: Game[]): Game[] {
+  // The Worker sends kickoff as an ISO string; revive it to a Date.
+  return games.map((g) => ({ ...g, kickoff: new Date(g.kickoff) }));
 }
 
-// Parses "MM/DD/YYYY HH:mm" as local time.
-function parseKickoff(s: string): Date {
-  const [datePart, timePart = "00:00"] = s.trim().split(" ");
-  const [mm, dd, yyyy] = datePart.split("/").map(Number);
-  const [hh, min] = timePart.split(":").map(Number);
-  return new Date(yyyy, mm - 1, dd, hh, min);
-}
-
-export function normalizeGames(raw: RawGame[]): Game[] {
-  return raw.map((g) => ({
-    id: g.id,
-    homeId: g.home_team_id,
-    awayId: g.away_team_id,
-    homeName: g.home_team_name_en,
-    awayName: g.away_team_name_en,
-    homeScore: Number(g.home_score) || 0,
-    awayScore: Number(g.away_score) || 0,
-    group: g.group,
-    matchday: Number(g.matchday) || 0,
-    kickoff: parseKickoff(g.local_date),
-    finished: g.finished === "TRUE",
-    isGroupStage: g.type === "group",
-  }));
-}
-
-// I/O wrappers. fetchImpl is injectable for tests.
-export async function fetchTeams(
-  fetchImpl: typeof fetch = fetch,
-): Promise<Team[]> {
+export async function fetchTeams(fetchImpl: typeof fetch = fetch): Promise<Team[]> {
   const res = await fetchImpl(`${BASE_URL}/get/teams`);
   if (!res.ok) throw new Error(`API error: teams ${res.status}`);
-  const json = (await res.json()) as { teams: RawTeam[] };
-  return normalizeTeams(json.teams);
+  return (await res.json()) as Team[];
 }
 
-export async function fetchGames(
-  fetchImpl: typeof fetch = fetch,
-): Promise<Game[]> {
+export async function fetchGames(fetchImpl: typeof fetch = fetch): Promise<Game[]> {
   const res = await fetchImpl(`${BASE_URL}/get/games`);
   if (!res.ok) throw new Error(`API error: games ${res.status}`);
-  const json = (await res.json()) as { games: RawGame[] };
-  return normalizeGames(json.games);
+  return reviveGames((await res.json()) as Game[]);
 }
