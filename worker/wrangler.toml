@@ -2,10 +2,9 @@ name = "worldcupdak-data"
 main = "index.ts"
 compatibility_date = "2026-06-16"
 
-# KV id is filled in during Task 11 (`wrangler kv namespace create`).
 [[kv_namespaces]]
 binding = "WCDAK_KV"
-id = "TASK_11_PLACEHOLDER"
+id = "b35e2b79ced0b9b184041e40d346f3df"
 
 [triggers]
 crons = ["* * * * *"]
