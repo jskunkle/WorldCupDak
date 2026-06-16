@@ -23,7 +23,8 @@ We previously considered a second data source but it requires a server because i
 
 ## Decisions
 
-- **Primary source:** worldcup26.ir (free, no key). **Fallback:** the keyed source, used only when the primary errors or times out. The Worker model hides the primary's slowness because the slow fetch runs in the background cron, not the request path.
+- **Primary source:** worldcup26.ir (free, no key). **Fallback:** football-data.org (keyed), used only when the primary errors or times out. The Worker model hides the primary's slowness because the slow fetch runs in the background cron, not the request path.
+- **football-data.org specifics:** API v4, competition `WC` (id 2000, in the free tier), endpoints `GET /v4/competitions/WC/matches` and `GET /v4/competitions/WC/teams`, auth via `X-Auth-Token` header. Free tier is rate-limited to **10 requests/min** — fine, since we call it only on failover (2 requests/refresh).
 - **Normalization moves server-side.** The Worker serves clean domain `Team[]` / `Game[]`; each source adapter normalizes its own schema. The client drops its `normalizeTeams`/`normalizeGames` step.
 - **Refresh cadence:** Cron every 1 minute, but KV is written **only when the data changed** (ETag/hash gate) to stay under the free write cap.
 - **Repo layout:** the Worker lives in a `worker/` folder in this repo (single repo; frontend deploys via Render, Worker via `wrangler`).
@@ -51,9 +52,37 @@ interface Source {
 ```
 
 - `worldcup26.ts` — primary. Reuses the existing normalization logic (`name_en`→`name`, `fifa_code`→`code`, `local_date` "MM/DD/YYYY HH:mm" → `Date`, `finished === "TRUE"` → boolean, etc.), moved out of the client `src/api.ts` into a shared module the Worker imports.
-- `<fallback>.ts` — the keyed source. **Prerequisite: identify the source and capture a sample response** so its normalizer can be written. Reads its key from `env`. Until provided, this adapter is a stub that throws, which simply means failover has nothing to fall to (primary-only behavior).
+- `football-data.ts` — fallback. Reads the token from `env.FOOTBALL_DATA_TOKEN` (a Worker secret — see §8), sends it as `X-Auth-Token`. Fetches the two `WC` endpoints and normalizes to our domain types per the mapping below.
 
 `Team` and `Game` are the existing domain types from `src/types.ts`; the normalizers target those exactly, so the contract the client consumes is unchanged in *shape* — only its *origin* moves to the Worker.
+
+### football-data.org → domain mapping
+
+**Game** (from a `matches[]` entry):
+
+| domain `Game` | football-data source |
+| --- | --- |
+| `id` | `String(match.id)` |
+| `homeId` / `awayId` | `String(match.homeTeam.id)` / `String(match.awayTeam.id)` |
+| `homeName` / `awayName` | `match.homeTeam.name` / `match.awayTeam.name` |
+| `homeScore` / `awayScore` | `match.score.fullTime.home ?? 0` / `.away ?? 0` |
+| `group` | `match.group` `"GROUP_A"` → `"A"` (strip `"GROUP_"`); `null` for knockout |
+| `matchday` | `match.matchday` |
+| `kickoff` | `new Date(match.utcDate)` (ISO UTC instant) |
+| `finished` | `match.status === "FINISHED"` |
+| `isGroupStage` | `match.stage === "GROUP_STAGE"` |
+
+**Team** (from a `teams[]` entry):
+
+| domain `Team` | football-data source |
+| --- | --- |
+| `id` | `String(team.id)` |
+| `name` | `team.name` |
+| `code` | `team.tla` (e.g. `"URU"`) |
+| `flagUrl` | `team.crest` |
+| `group` | **derived** — football-data's teams endpoint has no group; map each team id to the `group` of its matches (strip `"GROUP_"`). |
+
+Note: football-data's `kickoff` is a true UTC instant, whereas the worldcup26 adapter parses `"MM/DD/YYYY HH:mm"` as *local* time. The two sources are never used simultaneously (fallback only when primary is down), so they won't produce mixed time bases within one snapshot.
 
 ## 3. Scheduled refresher — `worker/refresh.ts`
 
@@ -69,7 +98,7 @@ KV keys: `teams` and `games`. Per-minute cron that writes only on change keeps w
 
 ## 4. Request handler — `worker/handler.ts`
 
-- `GET /get/teams` / `GET /get/games`: read the KV record, return `data` as JSON with `Access-Control-Allow-Origin` (the Render origin), a short `Cache-Control`, and an `X-Data-Source` / `X-Fetched-At` header for observability.
+- `GET /get/teams` / `GET /get/games`: read the KV record, return `data` as JSON with `Access-Control-Allow-Origin: https://worldcupdak.onrender.com`, a short `Cache-Control`, and an `X-Data-Source` / `X-Fetched-At` header for observability. Handle the CORS preflight `OPTIONS` with the same allowed origin.
 - **Cold KV** (before the first cron has run): do a one-time inline populate (primary→fallback) so the first-ever request isn't empty.
 - **Both sources down and KV empty:** `503` with a small JSON error body. The client's existing `localStorage` cache keeps the last paint up, so the wall display does not go blank.
 - Includes `fetchedAt` in the payload so the client can *optionally* surface staleness later (not built now — YAGNI).
@@ -98,11 +127,16 @@ KV keys: `teams` and `games`. Per-minute cron that writes only on change keeps w
 
 **Manual smoke:** `wrangler dev` locally, confirm `/get/games` serves from KV in <100ms; point a local frontend build at it and confirm instant paint.
 
+## 8. Secrets & config
+
+- `FOOTBALL_DATA_TOKEN` is set via `wrangler secret put FOOTBALL_DATA_TOKEN` — **never** committed to the repo, `wrangler.toml`, or any client code. The Worker reads it from `env`.
+- The token currently in use was shared in plaintext during design; rotate it on football-data.org after the Worker is deployed and the secret is set.
+- Non-secret config (KV namespace binding, cron schedule, allowed CORS origin) lives in `wrangler.toml`.
+
 ## Net effect
 
 Cold visitors get an instant paint from a warm edge cache instead of a 12s–2min blank window; the dashboard survives worldcup26.ir being slow or down by failing over to the keyed source; the keyed source's secret stays server-side; and it all runs on free tiers with the frontend's Render hosting untouched.
 
 ## Unresolved questions
 
-1. **What is the fallback data source?** Need its name/URL, the API key, and a sample `teams`/`games` response to write its adapter and normalizer. Until then the design ships primary-only (fallback stub throws).
-2. **CORS origin:** lock `Access-Control-Allow-Origin` to the exact Render URL, or allow `*`? (Lean: lock to the Render origin.)
+None. (Fallback source resolved: football-data.org, competition `WC`, schema mapped in §2. CORS locked to `https://worldcupdak.onrender.com` in §4. Token handled as a Worker secret per §8; rotate after deploy.)
