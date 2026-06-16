@@ -4,7 +4,7 @@ compatibility_date = "2026-06-16"
 
 [[kv_namespaces]]
 binding = "WCDAK_KV"
-id = "b35e2b79ced0b9b184041e40d346f3df"
+id = "b35e2b79ce0b49b184041e40d346f3df"
 
 [triggers]
 crons = ["* * * * *"]
