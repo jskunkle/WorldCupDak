@@ -5,3 +5,7 @@ services:
     buildCommand: corepack enable && pnpm install && pnpm build
     staticPublishPath: ./dist
     pullRequestPreviewsEnabled: false
+    envVars:
+      # Build-time base URL for the data Worker (see worker/ + README).
+      - key: VITE_API_BASE
+        value: https://worldcupdak-data.worldcupdak.workers.dev
