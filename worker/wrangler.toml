@@ -1,0 +1,13 @@
+name = "worldcupdak-data"
+main = "index.ts"
+compatibility_date = "2026-06-16"
+
+# KV id is filled in during Task 11 (`wrangler kv namespace create`).
+[[kv_namespaces]]
+binding = "WCDAK_KV"
+id = "TASK_11_PLACEHOLDER"
+
+[triggers]
+crons = ["* * * * *"]
+
+# FOOTBALL_DATA_TOKEN is set as a secret in Task 11 (never committed).
