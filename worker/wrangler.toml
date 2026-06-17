@@ -7,6 +7,8 @@ binding = "WCDAK_KV"
 id = "b35e2b79ce0b49b184041e40d346f3df"
 
 [triggers]
-crons = ["* * * * *"]
+# Every 5 minutes. The Workers KV free tier allows only 1,000 writes/day; the
+# previous every-minute schedule could exhaust it during live matches.
+crons = ["*/5 * * * *"]
 
 # FOOTBALL_DATA_TOKEN is set as a secret in Task 11 (never committed).

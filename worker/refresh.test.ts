@@ -89,6 +89,28 @@ describe("refreshSnapshot", () => {
     });
   });
 
+  it("does not rewrite when upstream returns the same content in a different order", async () => {
+    const kv = fakeKV();
+    const teamB: Team = { ...team, id: "2", name: "RSA", code: "RSA" };
+    const gameB: Game = { ...game, id: "2" };
+    await refreshSnapshot(
+      [source("primary", { teams: [team, teamB], games: [game, gameB] })],
+      kv,
+      1000,
+    );
+    // Same teams/games, reversed order — semantically identical.
+    const result = await refreshSnapshot(
+      [source("primary", { teams: [teamB, team], games: [gameB, game] })],
+      kv,
+      2000,
+    );
+    expect(result).toEqual({
+      source: "primary",
+      teamsWritten: false,
+      gamesWritten: false,
+    });
+  });
+
   it("falls back to the second source when the primary fails", async () => {
     const kv = fakeKV();
     const result = await refreshSnapshot(

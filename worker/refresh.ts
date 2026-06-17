@@ -44,6 +44,13 @@ export interface RefreshResult {
   gamesWritten: boolean;
 }
 
+// Upstream sources don't guarantee row order, so sort by id before hashing.
+// Otherwise a reorder alone flips the content hash and burns a KV write every
+// cron tick — the daily write quota is the binding free-tier limit.
+function sortById<T extends { id: string }>(rows: T[]): T[] {
+  return [...rows].sort((a, b) => a.id.localeCompare(b.id));
+}
+
 // Fetches one full snapshot via failover and writes the teams/games KV records
 // only when their content changed. Returns null if every source failed.
 export async function refreshSnapshot(
@@ -56,14 +63,14 @@ export async function refreshSnapshot(
   const teamsWritten = await writeIfChanged(
     kv,
     "teams",
-    snap.teams,
+    sortById(snap.teams),
     snap.source,
     now,
   );
   const gamesWritten = await writeIfChanged(
     kv,
     "games",
-    snap.games,
+    sortById(snap.games),
     snap.source,
     now,
   );
