@@ -66,6 +66,13 @@ const BRACKET_VFILL = 0.92;
  */
 export function fitBracket(app: HTMLElement): void {
   const root = document.documentElement;
+  // With no match boxes there is nothing to bound the size against, so growing
+  // the font would blow up the lone trophy. Reset and bail (main.ts also avoids
+  // painting an empty bracket, so this is a belt-and-suspenders guard).
+  if (app.querySelectorAll(".bside .bm").length === 0) {
+    root.style.fontSize = "";
+    return;
+  }
   const columns = Array.from(app.querySelectorAll<HTMLElement>(".bcol-cells"));
   const names = Array.from(app.querySelectorAll<HTMLElement>(".bm-name"));
   const board = app.querySelector<HTMLElement>(".bboard");

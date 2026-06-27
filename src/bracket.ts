@@ -113,6 +113,15 @@ export function activeRound(bracket: Bracket): KnockoutRound {
   return "final";
 }
 
+// True when the bracket has at least one knockout match to draw. Used to avoid
+// painting an empty bracket (e.g. a data source that dropped the knockout
+// games), which would render as a lone trophy.
+export function bracketHasMatches(bracket: Bracket): boolean {
+  return (Object.keys(bracket.rounds) as KnockoutRound[]).some(
+    (r) => bracket.rounds[r].length > 0,
+  );
+}
+
 export function buildBracket(games: Game[], teams: Team[], now: Date): Bracket {
   const byId = new Map(teams.map((t) => [t.id, t]));
   const rounds: Record<KnockoutRound, BracketMatch[]> = {

@@ -180,6 +180,26 @@ test("view=standings still shows group tables", async ({ page }) => {
   await expect(page.locator("#bracket")).toBeHidden();
 });
 
+test("an empty bracket falls back to standings", async ({ page }) => {
+  // Serve only group-stage games (as a failover source without knockout data
+  // would): the bracket has nothing to draw, so it must show standings instead
+  // of a lone trophy — even when the bracket view is forced.
+  const json = (body: unknown) => ({
+    status: 200,
+    contentType: "application/json",
+    headers: { "Access-Control-Allow-Origin": "*" },
+    body: JSON.stringify(body),
+  });
+  await page.route("**/get/teams", (route) => route.fulfill(json(TEAMS)));
+  await page.route("**/get/games", (route) =>
+    route.fulfill(json(GAMES.filter((g) => g.isGroupStage))),
+  );
+  await page.goto("/?view=bracket");
+  await expect(page.locator('[data-group="A"]')).toBeVisible();
+  await expect(page.locator("#bracket")).toBeHidden();
+  await expect(page.locator(".btrophy")).toHaveCount(0);
+});
+
 test("rotate cycles between views on the interval", async ({ page }) => {
   await mockApi(page);
   await page.goto("/?rotate=standings,bracket&rotateSecs=5");

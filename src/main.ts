@@ -1,13 +1,13 @@
 import { fetchTeams, fetchGames } from "./api";
 import { computeStandings, buildScoreFeed, filterGroups } from "./standings";
 import { renderStandings, renderScoreFeed } from "./render";
-import { selectView, buildBracket } from "./bracket";
+import { selectView, buildBracket, bracketHasMatches } from "./bracket";
 import { renderFullBracket, renderFocusedBracket } from "./render-bracket";
 import { parseConfig, deriveGrid, type RotateView } from "./config";
 import { fitToViewport, fitBracket } from "./fit";
 import { needsTeamsRefresh } from "./refresh-policy";
 import { readCache, writeCache } from "./cache";
-import type { Snapshot, Team, Game } from "./types";
+import type { Snapshot, Team, Game, Bracket } from "./types";
 
 const config = parseConfig(window.location.search);
 
@@ -103,14 +103,22 @@ async function refresh(): Promise<void> {
 
 function paint(s: Snapshot): void {
   const spec = effectiveSpec();
-  currentSpec = spec;
-  appEl.setAttribute("data-view", spec.view);
 
+  // Only show a bracket that actually has matches. If the data source dropped
+  // the knockout games (e.g. a failover), the bracket would render as a lone
+  // trophy and fitBracket would blow the font up — fall back to standings.
   if (spec.view === "bracket") {
-    paintBracket(spec.bracket);
-    return;
+    const bracket = buildBracket(lastGames, cachedTeams ?? [], new Date());
+    if (bracketHasMatches(bracket)) {
+      currentSpec = spec;
+      appEl.setAttribute("data-view", "bracket");
+      paintBracket(spec.bracket, bracket);
+      return;
+    }
   }
 
+  currentSpec = { view: "standings", bracket: "full" };
+  appEl.setAttribute("data-view", "standings");
   stopFocusRotation();
   bracketEl.style.display = "none";
   groupsEl.style.display = "";
@@ -128,12 +136,10 @@ function paint(s: Snapshot): void {
   if (config.fit) fitToViewport(appEl);
 }
 
-function paintBracket(layout: "full" | "focused"): void {
+function paintBracket(layout: "full" | "focused", bracket: Bracket): void {
   groupsEl.style.display = "none";
   scoresEl.style.display = "none";
   bracketEl.style.display = "";
-
-  const bracket = buildBracket(lastGames, cachedTeams ?? [], new Date());
 
   if (layout === "focused") {
     // Focused cards are clamp-sized; clear any root font-size left by a fit pass.
@@ -152,6 +158,7 @@ function startFocusRotation(): void {
   focusTimer = window.setInterval(() => {
     focusPage += 1;
     const bracket = buildBracket(lastGames, cachedTeams ?? [], new Date());
+    if (!bracketHasMatches(bracket)) return; // skip an empty refresh
     renderFocusedBracket(bracketEl, bracket, focusPage);
   }, FOCUS_ROTATE_MS);
 }

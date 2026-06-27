@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { roundOf, buildBracket, selectView, activeRound } from "../src/bracket";
+import {
+  roundOf,
+  buildBracket,
+  selectView,
+  activeRound,
+  bracketHasMatches,
+} from "../src/bracket";
 import type { Team, Game } from "../src/types";
 import type { DashboardConfig } from "../src/config";
 
@@ -209,5 +215,16 @@ describe("activeRound", () => {
     ];
     const b = buildBracket(games, [], new Date(2026, 6, 1, 18, 0));
     expect(activeRound(b)).toBe("final");
+  });
+});
+
+describe("bracketHasMatches", () => {
+  it("is false when there are no knockout games, true otherwise", () => {
+    const groupOnly = [ko("1", 1, "a", "b", { isGroupStage: true })];
+    expect(bracketHasMatches(buildBracket(groupOnly, [], now))).toBe(false);
+    expect(bracketHasMatches(buildBracket([], [], now))).toBe(false);
+    expect(
+      bracketHasMatches(buildBracket([ko("73", 4, "a", "b")], [], now)),
+    ).toBe(true);
   });
 });
