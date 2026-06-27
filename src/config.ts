@@ -10,6 +10,8 @@ export interface DashboardConfig {
   theme: "dark" | "light";
   highlight: string[]; // FIFA codes, uppercased
   fit: boolean;
+  view: "auto" | "standings" | "bracket";
+  bracket: "full" | "focused";
 }
 
 const DEFAULTS: DashboardConfig = {
@@ -24,6 +26,8 @@ const DEFAULTS: DashboardConfig = {
   theme: "dark",
   highlight: [],
   fit: true,
+  view: "auto",
+  bracket: "full",
 };
 
 const MIN_REFRESH_MS = 30_000;
@@ -79,6 +83,13 @@ export function parseConfig(search: string): DashboardConfig {
     theme: p.get("theme") === "light" ? "light" : "dark",
     highlight: csvCodes(p.get("highlight")),
     fit: p.get("fit") !== "off",
+    view:
+      p.get("view") === "standings"
+        ? "standings"
+        : p.get("view") === "bracket"
+          ? "bracket"
+          : "auto",
+    bracket: p.get("bracket") === "focused" ? "focused" : "full",
   };
 }
 

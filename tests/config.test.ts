@@ -15,6 +15,8 @@ describe("parseConfig", () => {
       theme: "dark",
       highlight: [],
       fit: true,
+      view: "auto",
+      bracket: "full",
     });
   });
 
@@ -85,6 +87,24 @@ describe("parseConfig", () => {
   it("ignores unknown params", () => {
     expect(() => parseConfig("?bogus=1&groups=A")).not.toThrow();
     expect(parseConfig("?bogus=1&groups=A").groups).toEqual(["A"]);
+  });
+});
+
+describe("parseConfig view/bracket", () => {
+  it("defaults view to auto and bracket to full", () => {
+    expect(parseConfig("")).toMatchObject({ view: "auto", bracket: "full" });
+  });
+
+  it("parses view as auto | standings | bracket, else auto", () => {
+    expect(parseConfig("?view=standings").view).toBe("standings");
+    expect(parseConfig("?view=bracket").view).toBe("bracket");
+    expect(parseConfig("?view=nonsense").view).toBe("auto");
+  });
+
+  it("parses bracket as full | focused, else full", () => {
+    expect(parseConfig("?bracket=focused").bracket).toBe("focused");
+    expect(parseConfig("?bracket=full").bracket).toBe("full");
+    expect(parseConfig("?bracket=weird").bracket).toBe("full");
   });
 });
 
