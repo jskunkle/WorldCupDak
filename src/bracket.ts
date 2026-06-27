@@ -77,10 +77,10 @@ export function selectView(
   const allGroupDone =
     groupGames.length > 0 && groupGames.every((g) => g.finished);
 
-  const knockoffs = games
+  const knockoutMs = games
     .filter((g) => !g.isGroupStage)
     .map((g) => g.kickoff.getTime());
-  const earliest = knockoffs.length ? Math.min(...knockoffs) : null;
+  const earliest = knockoutMs.length ? Math.min(...knockoutMs) : null;
   const pastFirstKnockout = earliest !== null && now.getTime() > earliest;
 
   return allGroupDone || pastFirstKnockout ? "bracket" : "standings";
