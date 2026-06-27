@@ -4,6 +4,7 @@ import type {
   BracketSlot,
   KnockoutRound,
 } from "./types";
+import { activeRound } from "./bracket";
 
 const ROUND_LABEL: Record<KnockoutRound, string> = {
   r32: "Round of 32",
@@ -129,4 +130,128 @@ export function renderFullBracket(
   board.appendChild(finalColumn(bracket));
   board.appendChild(sideEl(bracket.right, "right"));
   container.appendChild(board);
+}
+
+const FOCUS_PAGE_SIZE = 4;
+const RAIL_ROUNDS: KnockoutRound[] = ["r32", "r16", "qf", "sf", "final"];
+
+const STATUS_RANK: Record<string, number> = {
+  live: 0,
+  upcoming: 1,
+  finished: 2,
+};
+
+function orderForFocus(matches: BracketMatch[]): BracketMatch[] {
+  return [...matches].sort((a, b) => {
+    const r = STATUS_RANK[a.status] - STATUS_RANK[b.status];
+    if (r !== 0) return r;
+    // upcoming soonest-first; finished/live most-recent-first.
+    const dir = a.status === "upcoming" ? 1 : -1;
+    return dir * (a.kickoff.getTime() - b.kickoff.getTime());
+  });
+}
+
+function whenText(m: BracketMatch): string {
+  if (m.status === "live") return "LIVE";
+  const opts: Intl.DateTimeFormatOptions =
+    m.status === "finished"
+      ? { weekday: "short" }
+      : { weekday: "short", hour: "numeric", minute: "2-digit" };
+  return m.kickoff.toLocaleString(undefined, opts);
+}
+
+function focusSide(slot: BracketSlot, side: "home" | "away"): HTMLElement {
+  const wrap = el("div", `bfocus-side ${side}`);
+  const name = el("span", undefined, slot.tbd ? "TBD" : slot.code || slot.name);
+  if (!slot.tbd && slot.flagUrl) {
+    const img = document.createElement("img");
+    img.src = slot.flagUrl;
+    img.alt = slot.code;
+    img.addEventListener("error", () => img.remove());
+    // Flag before name on the home side, after on the away side.
+    if (side === "home") {
+      wrap.appendChild(img);
+      wrap.appendChild(name);
+    } else {
+      wrap.appendChild(name);
+      wrap.appendChild(img);
+    }
+  } else {
+    wrap.appendChild(name);
+  }
+  return wrap;
+}
+
+function focusCard(m: BracketMatch): HTMLElement {
+  const card = el("div", `bfocus-card${m.status === "live" ? " live" : ""}`);
+  card.setAttribute("data-match", m.id);
+  card.appendChild(focusSide(m.home, "home"));
+
+  const mid = el("div", "bfocus-mid");
+  const scored = m.status === "finished" || m.status === "live";
+  mid.appendChild(
+    el(
+      "div",
+      "bfocus-vs",
+      scored ? `${m.home.score} – ${m.away.score}` : "vs",
+    ),
+  );
+  mid.appendChild(el("div", "bfocus-when", whenText(m)));
+  card.appendChild(mid);
+
+  card.appendChild(focusSide(m.away, "away"));
+  return card;
+}
+
+function progressRail(bracket: Bracket): HTMLElement {
+  const rail = el("div", "bfocus-rail");
+  rail.appendChild(el("div", "brail-round", "Bracket progress"));
+  for (const round of RAIL_ROUNDS) {
+    const matches = bracket.rounds[round];
+    if (!matches.length) continue;
+    rail.appendChild(el("div", "brail-round", ROUND_LABEL[round]));
+    const dots = el("div", "brail-dots");
+    for (const m of matches) {
+      const cls =
+        m.status === "live"
+          ? "brail-dot live"
+          : m.status === "finished"
+            ? "brail-dot done"
+            : "brail-dot";
+      dots.appendChild(el("span", cls));
+    }
+    rail.appendChild(dots);
+  }
+  return rail;
+}
+
+export function renderFocusedBracket(
+  container: HTMLElement,
+  bracket: Bracket,
+  pageIndex = 0,
+): void {
+  container.replaceChildren();
+  const round = activeRound(bracket);
+  const matches = orderForFocus(bracket.rounds[round]);
+  const pages = Math.max(1, Math.ceil(matches.length / FOCUS_PAGE_SIZE));
+  const page = ((pageIndex % pages) + pages) % pages;
+  const shown = matches.slice(
+    page * FOCUS_PAGE_SIZE,
+    page * FOCUS_PAGE_SIZE + FOCUS_PAGE_SIZE,
+  );
+
+  container.appendChild(
+    el(
+      "div",
+      "bfocus-title",
+      `${ROUND_LABEL[round]}${pages > 1 ? ` · ${page + 1}/${pages}` : ""}`,
+    ),
+  );
+
+  const focus = el("div", "bfocus");
+  const main = el("div", "bfocus-main");
+  for (const m of shown) main.appendChild(focusCard(m));
+  focus.appendChild(main);
+  focus.appendChild(progressRail(bracket));
+  container.appendChild(focus);
 }

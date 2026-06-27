@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { renderFullBracket } from "../src/render-bracket";
+import { renderFocusedBracket } from "../src/render-bracket";
 import { buildBracket } from "../src/bracket";
 import type { Team, Game } from "../src/types";
 
@@ -87,5 +88,49 @@ describe("renderFullBracket", () => {
     renderFullBracket(c, sampleBracket());
     renderFullBracket(c, sampleBracket());
     expect(c.querySelectorAll('[data-round="r32"]')).toHaveLength(2); // one per side
+  });
+});
+
+describe("renderFocusedBracket", () => {
+  function focusBracket() {
+    const games = [
+      ko("73", 4, "a", "b", { homeScore: 1, awayScore: 0, kickoff: new Date(2026, 6, 1, 17, 0) }),
+      ko("74", 4, "0", "0", { kickoff: new Date(2026, 6, 1, 20, 0) }),
+    ];
+    return buildBracket(
+      games,
+      [team("a", "BRA"), team("b", "JPN")],
+      new Date(2026, 6, 1, 18, 0),
+    );
+  }
+
+  it("renders a large card per active-round match with both sides", () => {
+    const c = document.createElement("div");
+    renderFocusedBracket(c, focusBracket(), 0);
+    expect(c.querySelector('[data-match="73"]')).toBeTruthy();
+    expect(c.textContent).toContain("BRA");
+    expect(c.textContent).toContain("JPN");
+  });
+
+  it("marks live matches and shows their score", () => {
+    const c = document.createElement("div");
+    renderFocusedBracket(c, focusBracket(), 0);
+    const card = c.querySelector(".bfocus-card.live")!;
+    expect(card).toBeTruthy();
+    expect(card.textContent).toContain("1");
+  });
+
+  it("renders a progress rail with a dot per round", () => {
+    const c = document.createElement("div");
+    renderFocusedBracket(c, focusBracket(), 0);
+    expect(c.querySelector(".bfocus-rail")).toBeTruthy();
+    expect(c.querySelectorAll(".brail-dot").length).toBeGreaterThan(0);
+  });
+
+  it("repaints in place", () => {
+    const c = document.createElement("div");
+    renderFocusedBracket(c, focusBracket(), 0);
+    renderFocusedBracket(c, focusBracket(), 1);
+    expect(c.querySelectorAll(".bfocus-main")).toHaveLength(1);
   });
 });
