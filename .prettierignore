@@ -1,0 +1,3 @@
+# Generated / managed files that should not be reformatted.
+pnpm-lock.yaml
+dist
