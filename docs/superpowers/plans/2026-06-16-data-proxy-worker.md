@@ -15,6 +15,7 @@
 ## File Structure
 
 **New (`worker/`):**
+
 - `worker/wrangler.toml` — Worker name, KV binding, Cron schedule, compatibility date.
 - `worker/tsconfig.json` — Worker-only TS config (Workers types, includes `../src/types.ts`).
 - `worker/sources/source.ts` — `Source` interface + `SourceSnapshot` type.
@@ -29,6 +30,7 @@
 - Worker tests: `worker/**/*.test.ts` (pure functions only).
 
 **Modified:**
+
 - `package.json` — add `wrangler` + `@cloudflare/workers-types` devDeps; worker scripts.
 - `vite.config.ts` — add `worker/**/*.test.ts` to Vitest `include`.
 - `src/api.ts` — drop normalization; fetch normalized arrays; revive `kickoff`; `BASE_URL` from `VITE_API_BASE`.
@@ -45,6 +47,7 @@
 ## Task 1: Worker scaffolding & config
 
 **Files:**
+
 - Modify: `package.json`
 - Modify: `vite.config.ts`
 - Create: `worker/tsconfig.json`
@@ -53,14 +56,17 @@
 - [ ] **Step 1: Install Worker dev dependencies**
 
 Run:
+
 ```bash
 pnpm add -D wrangler @cloudflare/workers-types
 ```
+
 Expected: both appear under `devDependencies` in `package.json`.
 
 - [ ] **Step 2: Add Worker scripts to `package.json`**
 
 Add to the `"scripts"` block:
+
 ```json
     "worker:typecheck": "tsc --noEmit -p worker/tsconfig.json",
     "worker:dev": "wrangler dev --config worker/wrangler.toml",
@@ -70,6 +76,7 @@ Add to the `"scripts"` block:
 - [ ] **Step 3: Add the worker test glob to `vite.config.ts`**
 
 Change the `include` line to:
+
 ```ts
     include: ["tests/**/*.test.ts", "worker/**/*.test.ts"],
 ```
@@ -128,12 +135,14 @@ git commit -m "chore: scaffold Cloudflare Worker tooling and config"
 ## Task 2: Content-hash utility
 
 **Files:**
+
 - Create: `worker/hash.ts`
 - Test: `worker/hash.test.ts`
 
 - [ ] **Step 1: Write the failing test**
 
 `worker/hash.test.ts`:
+
 ```ts
 import { describe, it, expect } from "vitest";
 import { hashString } from "./hash";
@@ -161,6 +170,7 @@ Expected: FAIL — cannot find module `./hash`.
 - [ ] **Step 3: Write minimal implementation**
 
 `worker/hash.ts`:
+
 ```ts
 // djb2 string hash — small, deterministic, dependency-free. Used only to detect
 // whether a normalized payload changed since the last KV write.
@@ -190,12 +200,14 @@ git commit -m "feat(worker): add deterministic content-hash util"
 ## Task 3: Timeout utility
 
 **Files:**
+
 - Create: `worker/timeout.ts`
 - Test: `worker/timeout.test.ts`
 
 - [ ] **Step 1: Write the failing test**
 
 `worker/timeout.test.ts`:
+
 ```ts
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { withTimeout } from "./timeout";
@@ -231,6 +243,7 @@ Expected: FAIL — cannot find module `./timeout`.
 - [ ] **Step 3: Write minimal implementation**
 
 `worker/timeout.ts`:
+
 ```ts
 // Rejects if `p` has not settled within `ms`. Clears the timer on settle so
 // the test runner / Worker isolate is not kept alive.
@@ -271,6 +284,7 @@ git commit -m "feat(worker): add withTimeout promise wrapper"
 ## Task 4: Source interface & snapshot failover
 
 **Files:**
+
 - Create: `worker/sources/source.ts`
 - Create: `worker/failover.ts`
 - Test: `worker/failover.test.ts`
@@ -278,6 +292,7 @@ git commit -m "feat(worker): add withTimeout promise wrapper"
 - [ ] **Step 1: Create the `Source` interface (no test — type only)**
 
 `worker/sources/source.ts`:
+
 ```ts
 import type { Team, Game } from "../../src/types";
 
@@ -295,6 +310,7 @@ export interface Source {
 - [ ] **Step 2: Write the failing test**
 
 `worker/failover.test.ts`:
+
 ```ts
 import { describe, it, expect } from "vitest";
 import { fetchSnapshotWithFailover } from "./failover";
@@ -316,17 +332,26 @@ function fail(name: string): Source {
 
 describe("fetchSnapshotWithFailover", () => {
   it("returns the first source's snapshot tagged with its name", async () => {
-    const result = await fetchSnapshotWithFailover([ok("primary"), ok("fallback")], 1000);
+    const result = await fetchSnapshotWithFailover(
+      [ok("primary"), ok("fallback")],
+      1000,
+    );
     expect(result).toEqual({ ...SNAP, source: "primary" });
   });
 
   it("falls back to the next source when the primary throws", async () => {
-    const result = await fetchSnapshotWithFailover([fail("primary"), ok("fallback")], 1000);
+    const result = await fetchSnapshotWithFailover(
+      [fail("primary"), ok("fallback")],
+      1000,
+    );
     expect(result).toEqual({ ...SNAP, source: "fallback" });
   });
 
   it("returns null when every source fails", async () => {
-    const result = await fetchSnapshotWithFailover([fail("primary"), fail("fallback")], 1000);
+    const result = await fetchSnapshotWithFailover(
+      [fail("primary"), fail("fallback")],
+      1000,
+    );
     expect(result).toBeNull();
   });
 });
@@ -340,6 +365,7 @@ Expected: FAIL — cannot find module `./failover`.
 - [ ] **Step 4: Write minimal implementation**
 
 `worker/failover.ts`:
+
 ```ts
 import type { Source, SourceSnapshot } from "./sources/source";
 import { withTimeout } from "./timeout";
@@ -383,6 +409,7 @@ git commit -m "feat(worker): add source interface and snapshot failover"
 ## Task 5: worldcup26.ir adapter (move normalizers from the client)
 
 **Files:**
+
 - Create: `worker/sources/worldcup26.ts`
 - Test: `worker/sources/worldcup26.test.ts`
 
@@ -391,6 +418,7 @@ This moves the normalization logic out of `src/api.ts` (which Task 10 strips dow
 - [ ] **Step 1: Write the failing test (ported from the existing `tests/api.test.ts`)**
 
 `worker/sources/worldcup26.test.ts`:
+
 ```ts
 import { describe, it, expect } from "vitest";
 import { normalizeTeams, normalizeGames } from "./worldcup26";
@@ -447,15 +475,22 @@ describe("normalizeGames", () => {
   });
 
   it("treats finished other than 'TRUE' as not finished", () => {
-    expect(normalizeGames([{ ...finishedGame, finished: "FALSE" }])[0].finished).toBe(false);
+    expect(
+      normalizeGames([{ ...finishedGame, finished: "FALSE" }])[0].finished,
+    ).toBe(false);
   });
 
   it("marks non-group types as not group stage", () => {
-    expect(normalizeGames([{ ...finishedGame, type: "round_of_32" }])[0].isGroupStage).toBe(false);
+    expect(
+      normalizeGames([{ ...finishedGame, type: "round_of_32" }])[0]
+        .isGroupStage,
+    ).toBe(false);
   });
 
   it("coerces malformed numeric fields to 0 instead of NaN", () => {
-    const [g] = normalizeGames([{ ...finishedGame, home_score: "null", away_score: "" }]);
+    const [g] = normalizeGames([
+      { ...finishedGame, home_score: "null", away_score: "" },
+    ]);
     expect(g.homeScore).toBe(0);
     expect(g.awayScore).toBe(0);
   });
@@ -470,6 +505,7 @@ Expected: FAIL — cannot find module `./worldcup26`.
 - [ ] **Step 3: Write the implementation (normalizers moved verbatim from `src/api.ts`, plus `fetchSnapshot`)**
 
 `worker/sources/worldcup26.ts`:
+
 ```ts
 import type { RawTeam, RawGame, Team, Game } from "../../src/types";
 import type { Source } from "./source";
@@ -547,6 +583,7 @@ git commit -m "feat(worker): add worldcup26 adapter with moved normalizers"
 ## Task 6: football-data.org adapter
 
 **Files:**
+
 - Create: `worker/sources/football-data.ts`
 - Test: `worker/sources/football-data.test.ts`
 
@@ -555,6 +592,7 @@ Maps football-data.org v4 to the domain types per spec §2, including deriving e
 - [ ] **Step 1: Write the failing test (fixtures trimmed from real API responses)**
 
 `worker/sources/football-data.test.ts`:
+
 ```ts
 import { describe, it, expect } from "vitest";
 import { normalizeFdGames, normalizeFdTeams } from "./football-data";
@@ -588,8 +626,18 @@ const matchesRes = {
 
 const teamsRes = {
   teams: [
-    { id: 769, name: "Mexico", tla: "MEX", crest: "https://crests.football-data.org/769.svg" },
-    { id: 758, name: "Uruguay", tla: "URU", crest: "https://crests.football-data.org/758.svg" },
+    {
+      id: 769,
+      name: "Mexico",
+      tla: "MEX",
+      crest: "https://crests.football-data.org/769.svg",
+    },
+    {
+      id: 758,
+      name: "Uruguay",
+      tla: "URU",
+      crest: "https://crests.football-data.org/758.svg",
+    },
   ],
 };
 
@@ -649,6 +697,7 @@ Expected: FAIL — cannot find module `./football-data`.
 - [ ] **Step 3: Write the implementation**
 
 `worker/sources/football-data.ts`:
+
 ```ts
 import type { Team, Game } from "../../src/types";
 import type { Source } from "./source";
@@ -764,12 +813,14 @@ git commit -m "feat(worker): add football-data.org fallback adapter"
 ## Task 7: Refresh orchestration (failover + hash-gated KV write)
 
 **Files:**
+
 - Create: `worker/refresh.ts`
 - Test: `worker/refresh.test.ts`
 
 - [ ] **Step 1: Write the failing test (fake KVStore + fake sources)**
 
 `worker/refresh.test.ts`:
+
 ```ts
 import { describe, it, expect } from "vitest";
 import { refreshSnapshot } from "./refresh";
@@ -786,11 +837,26 @@ function fakeKV(): KVStore & { store: Map<string, string> } {
   };
 }
 
-const team: Team = { id: "1", name: "Mexico", code: "MEX", flagUrl: "f", group: "A" };
+const team: Team = {
+  id: "1",
+  name: "Mexico",
+  code: "MEX",
+  flagUrl: "f",
+  group: "A",
+};
 const game: Game = {
-  id: "1", homeId: "1", awayId: "2", homeName: "Mexico", awayName: "RSA",
-  homeScore: 0, awayScore: 0, group: "A", matchday: 1,
-  kickoff: new Date("2026-06-11T19:00:00Z"), finished: false, isGroupStage: true,
+  id: "1",
+  homeId: "1",
+  awayId: "2",
+  homeName: "Mexico",
+  awayName: "RSA",
+  homeScore: 0,
+  awayScore: 0,
+  group: "A",
+  matchday: 1,
+  kickoff: new Date("2026-06-11T19:00:00Z"),
+  finished: false,
+  isGroupStage: true,
 };
 const SNAP: SourceSnapshot = { teams: [team], games: [game] };
 
@@ -808,7 +874,11 @@ describe("refreshSnapshot", () => {
   it("writes both keys on first run and reports the source", async () => {
     const kv = fakeKV();
     const result = await refreshSnapshot([source("primary", SNAP)], kv, 1000);
-    expect(result).toEqual({ source: "primary", teamsWritten: true, gamesWritten: true });
+    expect(result).toEqual({
+      source: "primary",
+      teamsWritten: true,
+      gamesWritten: true,
+    });
     expect(JSON.parse(kv.store.get("teams")!).source).toBe("primary");
     expect(JSON.parse(kv.store.get("games")!).data[0].id).toBe("1");
   });
@@ -817,21 +887,38 @@ describe("refreshSnapshot", () => {
     const kv = fakeKV();
     await refreshSnapshot([source("primary", SNAP)], kv, 1000);
     const result = await refreshSnapshot([source("primary", SNAP)], kv, 2000);
-    expect(result).toEqual({ source: "primary", teamsWritten: false, gamesWritten: false });
+    expect(result).toEqual({
+      source: "primary",
+      teamsWritten: false,
+      gamesWritten: false,
+    });
   });
 
   it("rewrites games when a score changes but leaves unchanged teams alone", async () => {
     const kv = fakeKV();
     await refreshSnapshot([source("primary", SNAP)], kv, 1000);
-    const changed: SourceSnapshot = { teams: [team], games: [{ ...game, homeScore: 1 }] };
-    const result = await refreshSnapshot([source("primary", changed)], kv, 2000);
-    expect(result).toEqual({ source: "primary", teamsWritten: false, gamesWritten: true });
+    const changed: SourceSnapshot = {
+      teams: [team],
+      games: [{ ...game, homeScore: 1 }],
+    };
+    const result = await refreshSnapshot(
+      [source("primary", changed)],
+      kv,
+      2000,
+    );
+    expect(result).toEqual({
+      source: "primary",
+      teamsWritten: false,
+      gamesWritten: true,
+    });
   });
 
   it("falls back to the second source when the primary fails", async () => {
     const kv = fakeKV();
     const result = await refreshSnapshot(
-      [source("primary", null), source("fallback", SNAP)], kv, 1000,
+      [source("primary", null), source("fallback", SNAP)],
+      kv,
+      1000,
     );
     expect(result?.source).toBe("fallback");
   });
@@ -853,6 +940,7 @@ Expected: FAIL — cannot find module `./refresh`.
 - [ ] **Step 3: Write the implementation**
 
 `worker/refresh.ts`:
+
 ```ts
 import type { Source } from "./sources/source";
 import { fetchSnapshotWithFailover } from "./failover";
@@ -909,8 +997,20 @@ export async function refreshSnapshot(
 ): Promise<RefreshResult | null> {
   const snap = await fetchSnapshotWithFailover(sources, TIMEOUT_MS);
   if (!snap) return null;
-  const teamsWritten = await writeIfChanged(kv, "teams", snap.teams, snap.source, now);
-  const gamesWritten = await writeIfChanged(kv, "games", snap.games, snap.source, now);
+  const teamsWritten = await writeIfChanged(
+    kv,
+    "teams",
+    snap.teams,
+    snap.source,
+    now,
+  );
+  const gamesWritten = await writeIfChanged(
+    kv,
+    "games",
+    snap.games,
+    snap.source,
+    now,
+  );
   return { source: snap.source, teamsWritten, gamesWritten };
 }
 ```
@@ -932,12 +1032,14 @@ git commit -m "feat(worker): add refresh orchestration with hash-gated KV writes
 ## Task 8: Request handler
 
 **Files:**
+
 - Create: `worker/handler.ts`
 - Test: `worker/handler.test.ts`
 
 - [ ] **Step 1: Write the failing test**
 
 `worker/handler.test.ts`:
+
 ```ts
 import { describe, it, expect } from "vitest";
 import { handleRequest } from "./handler";
@@ -946,9 +1048,12 @@ import type { Source, SourceSnapshot } from "./sources/source";
 
 const ORIGIN = "https://worldcupdak.onrender.com";
 
-function fakeKV(seed?: Record<string, KvRecord>): KVStore & { store: Map<string, string> } {
+function fakeKV(
+  seed?: Record<string, KvRecord>,
+): KVStore & { store: Map<string, string> } {
   const store = new Map<string, string>();
-  for (const [k, v] of Object.entries(seed ?? {})) store.set(k, JSON.stringify(v));
+  for (const [k, v] of Object.entries(seed ?? {}))
+    store.set(k, JSON.stringify(v));
   return {
     store,
     get: async (k) => store.get(k) ?? null,
@@ -975,9 +1080,17 @@ function deps(kv: KVStore, sources: Source[]) {
 describe("handleRequest", () => {
   it("serves teams from KV with CORS + source headers", async () => {
     const kv = fakeKV({
-      teams: { data: SNAP.teams, source: "primary", fetchedAt: 1000, hash: "abc" },
+      teams: {
+        data: SNAP.teams,
+        source: "primary",
+        fetchedAt: 1000,
+        hash: "abc",
+      },
     });
-    const res = await handleRequest(new Request(`${ORIGIN}/get/teams`), deps(kv, [okSource]));
+    const res = await handleRequest(
+      new Request(`${ORIGIN}/get/teams`),
+      deps(kv, [okSource]),
+    );
     expect(res.status).toBe(200);
     expect(res.headers.get("Access-Control-Allow-Origin")).toBe(ORIGIN);
     expect(res.headers.get("X-Data-Source")).toBe("primary");
@@ -994,13 +1107,19 @@ describe("handleRequest", () => {
   });
 
   it("404s an unknown path", async () => {
-    const res = await handleRequest(new Request(`${ORIGIN}/nope`), deps(fakeKV(), [okSource]));
+    const res = await handleRequest(
+      new Request(`${ORIGIN}/nope`),
+      deps(fakeKV(), [okSource]),
+    );
     expect(res.status).toBe(404);
   });
 
   it("populates cold KV inline, then serves the requested key", async () => {
     const kv = fakeKV(); // empty
-    const res = await handleRequest(new Request(`${ORIGIN}/get/teams`), deps(kv, [okSource]));
+    const res = await handleRequest(
+      new Request(`${ORIGIN}/get/teams`),
+      deps(kv, [okSource]),
+    );
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual(SNAP.teams);
     expect(kv.store.has("games")).toBe(true); // both keys written during populate
@@ -1025,6 +1144,7 @@ Expected: FAIL — cannot find module `./handler`.
 - [ ] **Step 3: Write the implementation**
 
 `worker/handler.ts`:
+
 ```ts
 import type { Source } from "./sources/source";
 import { refreshSnapshot, type KVStore, type KvRecord } from "./refresh";
@@ -1054,7 +1174,10 @@ function jsonError(status: number, message: string): Response {
   });
 }
 
-export async function handleRequest(request: Request, deps: HandlerDeps): Promise<Response> {
+export async function handleRequest(
+  request: Request,
+  deps: HandlerDeps,
+): Promise<Response> {
   if (request.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: CORS });
   }
@@ -1102,6 +1225,7 @@ git commit -m "feat(worker): add request handler with CORS and cold-KV populate"
 ## Task 9: Worker entry point
 
 **Files:**
+
 - Create: `worker/index.ts`
 
 No unit test — this is runtime wiring validated by typecheck here and `wrangler dev` in Task 11.
@@ -1135,11 +1259,17 @@ export default {
     });
   },
 
-  async scheduled(_event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
+  async scheduled(
+    _event: ScheduledEvent,
+    env: Env,
+    ctx: ExecutionContext,
+  ): Promise<void> {
     ctx.waitUntil(
-      refreshSnapshot(sourcesFor(env), env.WCDAK_KV as unknown as KVStore, Date.now()).then(
-        () => undefined,
-      ),
+      refreshSnapshot(
+        sourcesFor(env),
+        env.WCDAK_KV as unknown as KVStore,
+        Date.now(),
+      ).then(() => undefined),
     );
   },
 };
@@ -1167,6 +1297,7 @@ git commit -m "feat(worker): add Worker entry wiring fetch and scheduled"
 ## Task 10: Repoint the client at the Worker
 
 **Files:**
+
 - Modify: `src/api.ts`
 - Modify: `tests/api.test.ts`
 
@@ -1175,6 +1306,7 @@ The client now fetches already-normalized JSON and revives `kickoff` (the same r
 - [ ] **Step 1: Rewrite the failing test**
 
 Replace the entire contents of `tests/api.test.ts`:
+
 ```ts
 import { describe, it, expect } from "vitest";
 import { fetchTeams, fetchGames } from "../src/api";
@@ -1222,7 +1354,8 @@ describe("fetchTeams", () => {
   });
 
   it("throws when the response is not ok", async () => {
-    const fakeFetch = (async () => fakeResponse([], false, 500)) as unknown as typeof fetch;
+    const fakeFetch = (async () =>
+      fakeResponse([], false, 500)) as unknown as typeof fetch;
     await expect(fetchTeams(fakeFetch)).rejects.toThrow();
   });
 });
@@ -1243,7 +1376,8 @@ describe("fetchGames", () => {
   });
 
   it("throws when the response is not ok", async () => {
-    const fakeFetch = (async () => fakeResponse([], false, 500)) as unknown as typeof fetch;
+    const fakeFetch = (async () =>
+      fakeResponse([], false, 500)) as unknown as typeof fetch;
     await expect(fetchGames(fakeFetch)).rejects.toThrow();
   });
 });
@@ -1257,6 +1391,7 @@ Expected: FAIL — `normalizeTeams`/`normalizeGames` import gone, or shapes mism
 - [ ] **Step 3: Rewrite `src/api.ts`**
 
 Replace the entire contents of `src/api.ts`:
+
 ```ts
 import type { Team, Game } from "./types";
 
@@ -1270,13 +1405,17 @@ function reviveGames(games: Game[]): Game[] {
   return games.map((g) => ({ ...g, kickoff: new Date(g.kickoff) }));
 }
 
-export async function fetchTeams(fetchImpl: typeof fetch = fetch): Promise<Team[]> {
+export async function fetchTeams(
+  fetchImpl: typeof fetch = fetch,
+): Promise<Team[]> {
   const res = await fetchImpl(`${BASE_URL}/get/teams`);
   if (!res.ok) throw new Error(`API error: teams ${res.status}`);
   return (await res.json()) as Team[];
 }
 
-export async function fetchGames(fetchImpl: typeof fetch = fetch): Promise<Game[]> {
+export async function fetchGames(
+  fetchImpl: typeof fetch = fetch,
+): Promise<Game[]> {
   const res = await fetchImpl(`${BASE_URL}/get/games`);
   if (!res.ok) throw new Error(`API error: games ${res.status}`);
   return reviveGames((await res.json()) as Game[]);
@@ -1306,6 +1445,7 @@ git commit -m "feat: point client API at the Worker and drop client-side normali
 ## Task 11: Deploy & wire-up (manual)
 
 **Files:**
+
 - Modify: `worker/wrangler.toml`
 - Modify: `render.yaml`
 - Modify: `CLAUDE.md`, `README.md`
@@ -1340,11 +1480,13 @@ Expected: prints the deployed URL, e.g. `https://worldcupdak-data.<subdomain>.wo
 - [ ] **Step 6: Point the frontend at the deployed Worker via Render**
 
 Edit `render.yaml` to add the env var under the service:
+
 ```yaml
-    envVars:
-      - key: VITE_API_BASE
-        value: https://worldcupdak-data.<subdomain>.workers.dev
+envVars:
+  - key: VITE_API_BASE
+    value: https://worldcupdak-data.<subdomain>.workers.dev
 ```
+
 (Use the exact URL from Step 5.) Commit and let Render rebuild, or set it in the Render dashboard.
 
 - [ ] **Step 7: Verify the deployed Worker**

@@ -5,19 +5,95 @@ import { test, expect, type Page } from "@playwright/test";
 // tests verify rendering deterministically, independent of origin and live API.
 
 const TEAMS = [
-  { id: "1", name: "Brazil", code: "BRA", flagUrl: "https://flagcdn.com/w80/br.png", group: "A" },
-  { id: "2", name: "Japan", code: "JPN", flagUrl: "https://flagcdn.com/w80/jp.png", group: "A" },
-  { id: "3", name: "Germany", code: "GER", flagUrl: "https://flagcdn.com/w80/de.png", group: "A" },
-  { id: "4", name: "Mexico", code: "MEX", flagUrl: "https://flagcdn.com/w80/mx.png", group: "A" },
+  {
+    id: "1",
+    name: "Brazil",
+    code: "BRA",
+    flagUrl: "https://flagcdn.com/w80/br.png",
+    group: "A",
+  },
+  {
+    id: "2",
+    name: "Japan",
+    code: "JPN",
+    flagUrl: "https://flagcdn.com/w80/jp.png",
+    group: "A",
+  },
+  {
+    id: "3",
+    name: "Germany",
+    code: "GER",
+    flagUrl: "https://flagcdn.com/w80/de.png",
+    group: "A",
+  },
+  {
+    id: "4",
+    name: "Mexico",
+    code: "MEX",
+    flagUrl: "https://flagcdn.com/w80/mx.png",
+    group: "A",
+  },
 ];
 
 const GAMES = [
   // Group stage (finished) so standings render.
-  { id: "1", homeId: "1", awayId: "2", homeName: "Brazil", awayName: "Japan", homeScore: 2, awayScore: 0, group: "A", matchday: 1, kickoff: "2026-06-12T12:00:00.000Z", finished: true, isGroupStage: true },
-  { id: "2", homeId: "3", awayId: "4", homeName: "Germany", awayName: "Mexico", homeScore: 1, awayScore: 1, group: "A", matchday: 1, kickoff: "2026-06-12T15:00:00.000Z", finished: true, isGroupStage: true },
+  {
+    id: "1",
+    homeId: "1",
+    awayId: "2",
+    homeName: "Brazil",
+    awayName: "Japan",
+    homeScore: 2,
+    awayScore: 0,
+    group: "A",
+    matchday: 1,
+    kickoff: "2026-06-12T12:00:00.000Z",
+    finished: true,
+    isGroupStage: true,
+  },
+  {
+    id: "2",
+    homeId: "3",
+    awayId: "4",
+    homeName: "Germany",
+    awayName: "Mexico",
+    homeScore: 1,
+    awayScore: 1,
+    group: "A",
+    matchday: 1,
+    kickoff: "2026-06-12T15:00:00.000Z",
+    finished: true,
+    isGroupStage: true,
+  },
   // Round of 32 (knockout) so the bracket has matches.
-  { id: "73", homeId: "1", awayId: "2", homeName: "Brazil", awayName: "Japan", homeScore: 0, awayScore: 0, group: "R32", matchday: 4, kickoff: "2026-06-28T12:00:00.000Z", finished: false, isGroupStage: false },
-  { id: "74", homeId: "3", awayId: "4", homeName: "Germany", awayName: "Mexico", homeScore: 0, awayScore: 0, group: "R32", matchday: 4, kickoff: "2026-06-29T12:00:00.000Z", finished: false, isGroupStage: false },
+  {
+    id: "73",
+    homeId: "1",
+    awayId: "2",
+    homeName: "Brazil",
+    awayName: "Japan",
+    homeScore: 0,
+    awayScore: 0,
+    group: "R32",
+    matchday: 4,
+    kickoff: "2026-06-28T12:00:00.000Z",
+    finished: false,
+    isGroupStage: false,
+  },
+  {
+    id: "74",
+    homeId: "3",
+    awayId: "4",
+    homeName: "Germany",
+    awayName: "Mexico",
+    homeScore: 0,
+    awayScore: 0,
+    group: "R32",
+    matchday: 4,
+    kickoff: "2026-06-29T12:00:00.000Z",
+    finished: false,
+    isGroupStage: false,
+  },
 ];
 
 async function mockApi(page: Page): Promise<void> {

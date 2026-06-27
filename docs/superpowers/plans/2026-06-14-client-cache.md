@@ -48,7 +48,12 @@
 In `tests/api.test.ts`, change the import line:
 
 ```ts
-import { normalizeTeams, normalizeGames, fetchTeams, fetchGames } from "../src/api";
+import {
+  normalizeTeams,
+  normalizeGames,
+  fetchTeams,
+  fetchGames,
+} from "../src/api";
 ```
 
 Then DELETE the entire `describe("fetchData", () => { ... })` block (lines 75–108 in the current file) and replace it with:
@@ -473,7 +478,13 @@ async function refresh(): Promise<void> {
     const games = await fetchGames();
     const ids = cachedTeams ? new Set(cachedTeams.map((t) => t.id)) : null;
     if (
-      needsTeamsRefresh(ids, teamsFetchedAt, games, Date.now(), TEAMS_MAX_AGE_MS)
+      needsTeamsRefresh(
+        ids,
+        teamsFetchedAt,
+        games,
+        Date.now(),
+        TEAMS_MAX_AGE_MS,
+      )
     ) {
       try {
         cachedTeams = await fetchTeams();
@@ -596,6 +607,7 @@ Expected: PASS. The dashboard's external behavior is unchanged; this confirms th
 - [ ] **Step 4: Manual smoke (recommended)**
 
 Run `pnpm dev`, then:
+
 - Load `/` once (populates the cache). Reload — confirm the board paints **immediately** from cache, then updates when the live fetch returns a few seconds later.
 - Open DevTools → Network: confirm steady-state refreshes hit `/get/games` each cycle and `/get/teams` only on first load (not every cycle).
 - DevTools → Application → Local Storage: confirm a `wcdak:cache:v1` entry exists and updates.

@@ -93,7 +93,11 @@ describe("renderFullBracket", () => {
 describe("renderFocusedBracket", () => {
   function focusBracket() {
     const games = [
-      ko("73", 4, "a", "b", { homeScore: 1, awayScore: 0, kickoff: new Date(2026, 6, 1, 17, 0) }),
+      ko("73", 4, "a", "b", {
+        homeScore: 1,
+        awayScore: 0,
+        kickoff: new Date(2026, 6, 1, 17, 0),
+      }),
       ko("74", 4, "0", "0", { kickoff: new Date(2026, 6, 1, 20, 0) }),
     ];
     return buildBracket(

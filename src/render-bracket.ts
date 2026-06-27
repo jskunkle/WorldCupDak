@@ -191,11 +191,7 @@ function focusCard(m: BracketMatch): HTMLElement {
   const mid = el("div", "bfocus-mid");
   const scored = m.status === "finished" || m.status === "live";
   mid.appendChild(
-    el(
-      "div",
-      "bfocus-vs",
-      scored ? `${m.home.score} – ${m.away.score}` : "vs",
-    ),
+    el("div", "bfocus-vs", scored ? `${m.home.score} – ${m.away.score}` : "vs"),
   );
   mid.appendChild(el("div", "bfocus-when", whenText(m)));
   card.appendChild(mid);

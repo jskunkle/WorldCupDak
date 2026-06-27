@@ -56,13 +56,13 @@ New `src/bracket.ts`: `buildBracket(games, teams, now) → Bracket`.
 - Filter to knockout games (`!isGroupStage`), bucket by `type`.
 - Within each round, order games by ascending numeric `id`. **Assumption:**
   id-order equals bracket order top→bottom, and adjacent pairs feed the next
-  round. This drives only *visual* adjacency/connectors — team names are always
+  round. This drives only _visual_ adjacency/connectors — team names are always
   source-provided, so a wrong assumption is cosmetic, not data-wrong. The
   round→round linkage lives in a single constant so it is trivial to correct if
   verification (once real teams populate R16+) shows otherwise.
 - Split each round's ordered games into a left half (first N/2) and right half.
 - Resolve each slot: join `homeId`/`awayId` to `teams` for `{ name, code,
-  flagUrl }`; `id === "0"` → `{ tbd: true }`. Carry `homeScore`/`awayScore`.
+flagUrl }`; `id === "0"` → `{ tbd: true }`. Carry `homeScore`/`awayScore`.
 - Per-match status reuses the existing `classify(game, now)` →
   `live | finished | upcoming`.
 
@@ -116,16 +116,16 @@ R32 team names render; `?view=bracket&bracket=focused` shows large cards.
 
 ## Files
 
-| File | Change |
-| --- | --- |
-| `src/types.ts` | add `Bracket*` types |
-| `src/bracket.ts` | new — `selectView`, `buildBracket`, `activeRound` (+ tests) |
-| `src/render-bracket.ts` | new — full + focused renderers (+ tests) |
-| `src/config.ts` | add `view`, `bracket` params |
-| `src/main.ts` | view selection + bracket wiring + focused rotation |
-| `index.html` | add `#bracket` container |
-| `src/styles.css` | bracket + focused styles |
-| `README.md`, `CLAUDE.md` | document new params + view behavior |
+| File                     | Change                                                      |
+| ------------------------ | ----------------------------------------------------------- |
+| `src/types.ts`           | add `Bracket*` types                                        |
+| `src/bracket.ts`         | new — `selectView`, `buildBracket`, `activeRound` (+ tests) |
+| `src/render-bracket.ts`  | new — full + focused renderers (+ tests)                    |
+| `src/config.ts`          | add `view`, `bracket` params                                |
+| `src/main.ts`            | view selection + bracket wiring + focused rotation          |
+| `index.html`             | add `#bracket` container                                    |
+| `src/styles.css`         | bracket + focused styles                                    |
+| `README.md`, `CLAUDE.md` | document new params + view behavior                         |
 
 ## Unresolved questions
 

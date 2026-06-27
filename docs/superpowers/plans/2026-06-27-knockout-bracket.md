@@ -28,6 +28,7 @@ Commit messages use Conventional Commits. All work happens on a feature branch (
 - [ ] **Step 1: Create the feature branch**
 
 Run:
+
 ```bash
 git checkout -b feat/knockout-bracket
 ```
@@ -53,6 +54,7 @@ Expected: `On branch feat/knockout-bracket`, working tree clean.
 ## Task 1: Config — `view` and `bracket` params
 
 **Files:**
+
 - Modify: `src/config.ts`
 - Test: `tests/config.test.ts`
 
@@ -97,8 +99,8 @@ Expected: FAIL — `view`/`bracket` undefined on the config object.
 In `src/config.ts`, add to the `DashboardConfig` interface:
 
 ```ts
-  view: "auto" | "standings" | "bracket";
-  bracket: "full" | "focused";
+view: "auto" | "standings" | "bracket";
+bracket: "full" | "focused";
 ```
 
 Add to `DEFAULTS`:
@@ -137,6 +139,7 @@ git commit -m "feat(config): add view and bracket query params"
 ## Task 2: Export `classify` from standings
 
 **Files:**
+
 - Modify: `src/standings.ts`
 
 `buildBracket` (Task 4) reuses the existing match classifier. It is currently module-private.
@@ -172,6 +175,7 @@ git commit -m "refactor(standings): export classify for reuse"
 ## Task 3: Bracket types
 
 **Files:**
+
 - Modify: `src/types.ts`
 
 - [ ] **Step 1: Add the types**
@@ -226,6 +230,7 @@ git commit -m "feat(types): add bracket model types"
 ## Task 4: `buildBracket` (pure)
 
 **Files:**
+
 - Create: `src/bracket.ts`
 - Test: `tests/bracket.test.ts`
 
@@ -482,6 +487,7 @@ git commit -m "feat(bracket): shape knockout games into a bracket model"
 ## Task 5: `selectView` and `activeRound` (pure)
 
 **Files:**
+
 - Modify: `src/bracket.ts`
 - Test: `tests/bracket.test.ts`
 
@@ -521,9 +527,9 @@ describe("selectView", () => {
     expect(selectView(games, t0, { ...baseConfig, view: "bracket" })).toBe(
       "bracket",
     );
-    expect(
-      selectView([], t0, { ...baseConfig, view: "standings" }),
-    ).toBe("standings");
+    expect(selectView([], t0, { ...baseConfig, view: "standings" })).toBe(
+      "standings",
+    );
   });
 
   it("auto: standings while any group game is unfinished and no knockout has kicked off", () => {
@@ -636,6 +642,7 @@ git commit -m "feat(bracket): add view selection and active-round helpers"
 ## Task 6: Bracket container + styles
 
 **Files:**
+
 - Modify: `index.html`
 - Modify: `src/styles.css`
 
@@ -646,7 +653,7 @@ No automated test (pure CSS/markup); verified visually in Task 9's e2e + manual 
 In `index.html`, inside `<div id="app">`, after the `<footer id="scores">` line, add:
 
 ```html
-      <section id="bracket" class="bracket-view" style="display: none"></section>
+<section id="bracket" class="bracket-view" style="display: none"></section>
 ```
 
 - [ ] **Step 2: Add styles**
@@ -943,6 +950,7 @@ git commit -m "feat(bracket): add bracket container and styles"
 ## Task 7: Full bracket renderer
 
 **Files:**
+
 - Create: `src/render-bracket.ts`
 - Test: `tests/render-bracket.test.ts`
 
@@ -959,12 +967,27 @@ import type { Team, Game } from "../src/types";
 function team(id: string, code: string): Team {
   return { id, code, name: code, flagUrl: `flag/${code}.png`, group: "A" };
 }
-function ko(id: string, matchday: number, h: string, a: string, o: Partial<Game> = {}): Game {
+function ko(
+  id: string,
+  matchday: number,
+  h: string,
+  a: string,
+  o: Partial<Game> = {},
+): Game {
   return {
-    id, homeId: h, awayId: a,
-    homeName: h === "0" ? "" : h, awayName: a === "0" ? "" : a,
-    homeScore: 0, awayScore: 0, group: "R", matchday,
-    kickoff: new Date(2026, 6, 1, 12, 0), finished: false, isGroupStage: false, ...o,
+    id,
+    homeId: h,
+    awayId: a,
+    homeName: h === "0" ? "" : h,
+    awayName: a === "0" ? "" : a,
+    homeScore: 0,
+    awayScore: 0,
+    group: "R",
+    matchday,
+    kickoff: new Date(2026, 6, 1, 12, 0),
+    finished: false,
+    isGroupStage: false,
+    ...o,
   };
 }
 
@@ -1079,7 +1102,9 @@ function slotRow(m: BracketMatch, slot: BracketSlot): HTMLElement {
     img.className = "bm-flag";
     img.src = slot.flagUrl;
     img.alt = slot.code;
-    img.addEventListener("error", () => img.replaceWith(el("span", "bm-flagph")));
+    img.addEventListener("error", () =>
+      img.replaceWith(el("span", "bm-flagph")),
+    );
     row.appendChild(img);
   }
 
@@ -1098,10 +1123,7 @@ function matchEl(m: BracketMatch, extraClass = ""): HTMLElement {
   return box;
 }
 
-function columnEl(
-  matches: BracketMatch[],
-  round: KnockoutRound,
-): HTMLElement {
+function columnEl(matches: BracketMatch[], round: KnockoutRound): HTMLElement {
   const col = el("div", `bcol ${round}`);
   col.setAttribute("data-round", round);
   col.appendChild(el("div", "bcol-label", ROUND_LABEL[round]));
@@ -1115,7 +1137,10 @@ function columnEl(
   return col;
 }
 
-function sideEl(columns: BracketMatch[][], side: "left" | "right"): HTMLElement {
+function sideEl(
+  columns: BracketMatch[][],
+  side: "left" | "right",
+): HTMLElement {
   const wrap = el("div", `bside ${side}`);
   // left renders outer→inner (r32..sf); right renders inner→outer (sf..r32).
   const order =
@@ -1188,6 +1213,7 @@ git commit -m "feat(bracket): full bracket renderer"
 ## Task 8: Focused bracket renderer
 
 **Files:**
+
 - Modify: `src/render-bracket.ts`
 - Test: `tests/render-bracket.test.ts`
 
@@ -1201,7 +1227,11 @@ import { renderFocusedBracket } from "../src/render-bracket";
 describe("renderFocusedBracket", () => {
   function focusBracket() {
     const games = [
-      ko("73", 4, "a", "b", { homeScore: 1, awayScore: 0, kickoff: new Date(2026, 6, 1, 17, 0) }),
+      ko("73", 4, "a", "b", {
+        homeScore: 1,
+        awayScore: 0,
+        kickoff: new Date(2026, 6, 1, 17, 0),
+      }),
       ko("74", 4, "0", "0", { kickoff: new Date(2026, 6, 1, 20, 0) }),
     ];
     return buildBracket(
@@ -1317,11 +1347,7 @@ function focusCard(m: BracketMatch): HTMLElement {
   const mid = el("div", "bfocus-mid");
   const scored = m.status === "finished" || m.status === "live";
   mid.appendChild(
-    el(
-      "div",
-      "bfocus-vs",
-      scored ? `${m.home.score} – ${m.away.score}` : "vs",
-    ),
+    el("div", "bfocus-vs", scored ? `${m.home.score} – ${m.away.score}` : "vs"),
   );
   mid.appendChild(el("div", "bfocus-when", whenText(m)));
   card.appendChild(mid);
@@ -1401,6 +1427,7 @@ git commit -m "feat(bracket): focused current-round renderer"
 ## Task 9: Wire into main.ts
 
 **Files:**
+
 - Modify: `src/main.ts`
 
 No new unit test (this is runtime wiring; covered by e2e in Task 10). Keep edits minimal and follow the existing structure.
@@ -1436,13 +1463,13 @@ const FOCUS_ROTATE_MS = 10_000;
 In `refresh()`, after `const games = await fetchGames();`, add:
 
 ```ts
-    lastGames = games;
+lastGames = games;
 ```
 
 In `seedFromCache()`, after `cachedTeams = cached.teams;`, add:
 
 ```ts
-    lastGames = cached.games;
+lastGames = cached.games;
 ```
 
 - [ ] **Step 3: Replace `paint` with view-aware painting**
@@ -1536,6 +1563,7 @@ git commit -m "feat(bracket): select and render the bracket view in main"
 ## Task 10: E2E tests
 
 **Files:**
+
 - Create: `e2e/bracket.spec.ts`
 
 These run against the dev server with live Worker data. Force the view so the test is deterministic regardless of tournament state. Assert on structure (round columns, cards), not specific team names, since live data changes.
@@ -1594,6 +1622,7 @@ git commit -m "test(bracket): e2e for forced bracket and focused views"
 ## Task 11: Docs, format, full suite
 
 **Files:**
+
 - Modify: `README.md`, `CLAUDE.md`
 
 - [ ] **Step 1: Document the params**
@@ -1638,6 +1667,7 @@ git commit -m "docs(bracket): document view/bracket params and architecture"
 - [ ] **Step 1: Manual smoke test**
 
 Run the dev server (`pnpm dev` or `"$NODE" node_modules/vite/bin/vite.js`) and check:
+
 - `/?view=bracket` — full bracket renders, R32 shows real teams + flags, later rounds TBD, connectors align, fits the viewport without scrollbars.
 - `/?view=bracket&bracket=focused` — large cards rotate every 10s, progress rail shows dots.
 - `/?view=standings` — unchanged standings.
@@ -1648,6 +1678,7 @@ Run the dev server (`pnpm dev` or `"$NODE" node_modules/vite/bin/vite.js`) and c
 ```bash
 git push -u origin feat/knockout-bracket
 ```
+
 Then use the `new-pr` skill / repo PR template.
 
 ---
@@ -1666,4 +1697,7 @@ Then use the `new-pr` skill / repo PR template.
   carries the full bracket.
 - **Score ticker hidden in bracket mode** and **focused rotation = 10s** are the
   approved defaults.
+
+```
+
 ```

@@ -10,6 +10,7 @@ computed client-side. See `README.md` for URL params and deploy.
   paint, with a `localStorage` instant-paint cache (`cache.ts`) and last-good
   fallback. `api.ts` fetches **already-normalized** `Team[]`/`Game[]` from the
   Worker (see below) and revives `kickoff` to a `Date`.
+- The client also derives a knockout `Bracket` from the same games (`bracket.ts`, round inferred from `matchday`) and `main.ts` auto-switches standings → bracket via `selectView`. Layouts live in `render-bracket.ts`.
 - `worker/` — a Cloudflare Worker data layer (caching + multi-source failover).
   A Cron trigger refreshes a full snapshot (teams + games from the **same**
   source, so team-id spaces match) into Workers KV, writing only when content

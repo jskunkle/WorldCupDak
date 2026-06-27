@@ -55,35 +55,35 @@ Each adapter's `fetchSnapshot` fetches that source's two endpoints and returns b
 - `worldcup26.ts` — primary. Reuses the existing normalization logic (`name_en`→`name`, `fifa_code`→`code`, `local_date` "MM/DD/YYYY HH:mm" → `Date`, `finished === "TRUE"` → boolean, etc.), moved out of the client `src/api.ts` into a shared module the Worker imports.
 - `football-data.ts` — fallback. Reads the token from `env.FOOTBALL_DATA_TOKEN` (a Worker secret — see §8), sends it as `X-Auth-Token`. Fetches the two `WC` endpoints and normalizes to our domain types per the mapping below.
 
-`Team` and `Game` are the existing domain types from `src/types.ts`; the normalizers target those exactly, so the contract the client consumes is unchanged in *shape* — only its *origin* moves to the Worker.
+`Team` and `Game` are the existing domain types from `src/types.ts`; the normalizers target those exactly, so the contract the client consumes is unchanged in _shape_ — only its _origin_ moves to the Worker.
 
 ### football-data.org → domain mapping
 
 **Game** (from a `matches[]` entry):
 
-| domain `Game` | football-data source |
-| --- | --- |
-| `id` | `String(match.id)` |
-| `homeId` / `awayId` | `String(match.homeTeam.id)` / `String(match.awayTeam.id)` |
-| `homeName` / `awayName` | `match.homeTeam.name` / `match.awayTeam.name` |
-| `homeScore` / `awayScore` | `match.score.fullTime.home ?? 0` / `.away ?? 0` |
-| `group` | `match.group` `"GROUP_A"` → `"A"` (strip `"GROUP_"`); `""` for knockout (domain `Game.group` is `string`) |
-| `matchday` | `match.matchday` |
-| `kickoff` | `new Date(match.utcDate)` (ISO UTC instant) |
-| `finished` | `match.status === "FINISHED"` |
-| `isGroupStage` | `match.stage === "GROUP_STAGE"` |
+| domain `Game`             | football-data source                                                                                      |
+| ------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `id`                      | `String(match.id)`                                                                                        |
+| `homeId` / `awayId`       | `String(match.homeTeam.id)` / `String(match.awayTeam.id)`                                                 |
+| `homeName` / `awayName`   | `match.homeTeam.name` / `match.awayTeam.name`                                                             |
+| `homeScore` / `awayScore` | `match.score.fullTime.home ?? 0` / `.away ?? 0`                                                           |
+| `group`                   | `match.group` `"GROUP_A"` → `"A"` (strip `"GROUP_"`); `""` for knockout (domain `Game.group` is `string`) |
+| `matchday`                | `match.matchday`                                                                                          |
+| `kickoff`                 | `new Date(match.utcDate)` (ISO UTC instant)                                                               |
+| `finished`                | `match.status === "FINISHED"`                                                                             |
+| `isGroupStage`            | `match.stage === "GROUP_STAGE"`                                                                           |
 
 **Team** (from a `teams[]` entry):
 
-| domain `Team` | football-data source |
-| --- | --- |
-| `id` | `String(team.id)` |
-| `name` | `team.name` |
-| `code` | `team.tla` (e.g. `"URU"`) |
-| `flagUrl` | `team.crest` |
-| `group` | **derived** — football-data's teams endpoint has no group; map each team id to the `group` of its matches (strip `"GROUP_"`). |
+| domain `Team` | football-data source                                                                                                          |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `id`          | `String(team.id)`                                                                                                             |
+| `name`        | `team.name`                                                                                                                   |
+| `code`        | `team.tla` (e.g. `"URU"`)                                                                                                     |
+| `flagUrl`     | `team.crest`                                                                                                                  |
+| `group`       | **derived** — football-data's teams endpoint has no group; map each team id to the `group` of its matches (strip `"GROUP_"`). |
 
-Note: football-data's `kickoff` is a true UTC instant, whereas the worldcup26 adapter parses `"MM/DD/YYYY HH:mm"` as *local* time. The two sources are never used simultaneously (fallback only when primary is down), so they won't produce mixed time bases within one snapshot.
+Note: football-data's `kickoff` is a true UTC instant, whereas the worldcup26 adapter parses `"MM/DD/YYYY HH:mm"` as _local_ time. The two sources are never used simultaneously (fallback only when primary is down), so they won't produce mixed time bases within one snapshot.
 
 ## 3. Scheduled refresher — `worker/refresh.ts`
 
@@ -104,7 +104,7 @@ KV keys: `teams` and `games`. Per-minute cron that writes only on change keeps w
 - `GET /get/teams` / `GET /get/games`: read the KV record, return `data` as JSON with `Access-Control-Allow-Origin: https://worldcupdak.onrender.com`, a short `Cache-Control`, and an `X-Data-Source` / `X-Fetched-At` header for observability. Handle the CORS preflight `OPTIONS` with the same allowed origin.
 - **Cold KV** (before the first cron has run): do a one-time inline `fetchSnapshotWithFailover`, write both KV records, then serve the requested one — so the first-ever request isn't empty.
 - **Both sources down and KV empty:** `503` with a small JSON error body. The client's existing `localStorage` cache keeps the last paint up, so the wall display does not go blank.
-- Includes `fetchedAt` in the payload so the client can *optionally* surface staleness later (not built now — YAGNI).
+- Includes `fetchedAt` in the payload so the client can _optionally_ surface staleness later (not built now — YAGNI).
 
 ## 5. Client change — `src/api.ts`
 

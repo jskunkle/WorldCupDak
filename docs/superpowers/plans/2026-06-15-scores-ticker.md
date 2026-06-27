@@ -10,6 +10,7 @@
 
 **Conventions:** 2-space indent, double quotes, trailing commas. Tests in `tests/*.test.ts` import from `vitest`.
 Commands (if `pnpm` errors with "mise"):
+
 - unit: `mise exec node@22.22.2 -- node node_modules/vitest/vitest.mjs run`
 - typecheck: `mise exec node@22.22.2 -- node node_modules/typescript/bin/tsc --noEmit`
 - build: `mise exec node@22.22.2 -- node node_modules/typescript/bin/tsc && mise exec node@22.22.2 -- node node_modules/vite/bin/vite.js build`
@@ -23,6 +24,7 @@ Commands (if `pnpm` errors with "mise"):
 ## File Structure
 
 **Modify:**
+
 - `src/render.ts` — rewrite `renderScoreFeed` to emit a two-copy `.ticker-track`; add a small `makeMatch` helper and a `SECONDS_PER_MATCH` constant.
 - `tests/render.test.ts` — add ticker assertions (existing renderScoreFeed tests stay and must keep passing).
 - `src/styles.css` — right padding; ticker animation + keyframes + reduced-motion; per-match margin for seam-uniform spacing.
@@ -32,6 +34,7 @@ Commands (if `pnpm` errors with "mise"):
 ## Task 1: Ticker rendering in `renderScoreFeed`
 
 **Files:**
+
 - Modify: `src/render.ts`
 - Test: `tests/render.test.ts`
 
@@ -180,6 +183,7 @@ git commit -m "feat: render live scores as a seamless two-copy ticker"
 ## Task 2: Ticker CSS + right padding
 
 **Files:**
+
 - Modify: `src/styles.css`
 
 No unit test (CSS/animation isn't testable in jsdom); verified by build, the existing e2e fit tests, and a manual smoke check.
@@ -189,13 +193,13 @@ No unit test (CSS/animation isn't testable in jsdom); verified by build, the exi
 Replace the `#app` padding line (current line 43):
 
 ```css
-  padding: 1vh 1vw;
+padding: 1vh 1vw;
 ```
 
 with:
 
 ```css
-  padding: 1vh 1.8vw 1vh 1vw;
+padding: 1vh 1.8vw 1vh 1vw;
 ```
 
 - [ ] **Step 2: Remove the now-redundant `gap` from `.scores`**
@@ -203,7 +207,7 @@ with:
 In the `.scores` rule (current lines 124–134), DELETE this line:
 
 ```css
-  gap: 1.6vw;
+gap: 1.6vw;
 ```
 
 (Spacing between matches now comes from a per-match margin so it stays uniform across the loop seam. Leave the rest of `.scores` — including `overflow: hidden` and `white-space: nowrap` — unchanged.)
@@ -304,6 +308,7 @@ Expected: PASS. The fit tests assert `#app` has no overflow; if the doubled tick
 - [ ] **Step 4: Manual smoke (recommended)**
 
 Run `pnpm dev`, then:
+
 - Load `/` — the scores strip scrolls slowly right-to-left and loops with no visible jump at the wrap.
 - Confirm the grid has a clean margin on the right edge (no longer touching the screen edge).
 - Load `/?scores=off` — the feed is hidden.
