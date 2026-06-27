@@ -179,3 +179,16 @@ test("view=standings still shows group tables", async ({ page }) => {
   await expect(page.locator('[data-group="A"]')).toBeVisible();
   await expect(page.locator("#bracket")).toBeHidden();
 });
+
+test("rotate cycles between views on the interval", async ({ page }) => {
+  await mockApi(page);
+  await page.goto("/?rotate=standings,bracket&rotateSecs=5");
+  // First step (index 0) is standings.
+  await expect(page.locator('[data-group="A"]')).toBeVisible();
+  await expect(page.locator("#bracket")).toBeHidden();
+  // After the interval it rotates to the bracket.
+  await expect(page.locator('[data-round="r32"]').first()).toBeVisible({
+    timeout: 15000,
+  });
+  await expect(page.locator("#groups")).toBeHidden();
+});

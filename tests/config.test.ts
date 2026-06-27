@@ -17,6 +17,8 @@ describe("parseConfig", () => {
       fit: true,
       view: "auto",
       bracket: "full",
+      rotate: [],
+      rotateSecs: 120,
     });
   });
 
@@ -105,6 +107,28 @@ describe("parseConfig view/bracket", () => {
     expect(parseConfig("?bracket=focused").bracket).toBe("focused");
     expect(parseConfig("?bracket=full").bracket).toBe("full");
     expect(parseConfig("?bracket=weird").bracket).toBe("full");
+  });
+});
+
+describe("parseConfig rotate", () => {
+  it("defaults rotation off (empty list) with a 120s interval", () => {
+    expect(parseConfig("")).toMatchObject({ rotate: [], rotateSecs: 120 });
+  });
+
+  it("parses a CSV of view tokens, lowercased, keeping order, dropping invalid", () => {
+    expect(
+      parseConfig("?rotate=standings,BRACKET,bogus,focused").rotate,
+    ).toEqual(["standings", "bracket", "focused"]);
+  });
+
+  it("treats an all-invalid rotate list as off", () => {
+    expect(parseConfig("?rotate=nope,x").rotate).toEqual([]);
+  });
+
+  it("parses rotateSecs and clamps to a 5s minimum, else default", () => {
+    expect(parseConfig("?rotateSecs=120").rotateSecs).toBe(120);
+    expect(parseConfig("?rotateSecs=2").rotateSecs).toBe(5);
+    expect(parseConfig("?rotateSecs=junk").rotateSecs).toBe(120);
   });
 });
 

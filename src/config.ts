@@ -1,3 +1,7 @@
+// A view the display can rotate through. "bracket" is the full bracket;
+// "focused" is the big-cards bracket; "standings" is the group tables.
+export type RotateView = "standings" | "bracket" | "focused";
+
 export interface DashboardConfig {
   groups: string[] | null; // null = show all groups
   cols: number | null; // null = derive from group count
@@ -12,6 +16,8 @@ export interface DashboardConfig {
   fit: boolean;
   view: "auto" | "standings" | "bracket";
   bracket: "full" | "focused";
+  rotate: RotateView[]; // empty = rotation off
+  rotateSecs: number; // interval between rotation steps
 }
 
 const DEFAULTS: DashboardConfig = {
@@ -28,9 +34,21 @@ const DEFAULTS: DashboardConfig = {
   fit: true,
   view: "auto",
   bracket: "full",
+  rotate: [],
+  rotateSecs: 120,
 };
 
 const MIN_REFRESH_MS = 30_000;
+const MIN_ROTATE_SECS = 5;
+const ROTATE_VIEWS = new Set<string>(["standings", "bracket", "focused"]);
+
+function rotateList(raw: string | null): RotateView[] {
+  if (raw === null) return [];
+  return raw
+    .split(",")
+    .map((s) => s.trim().toLowerCase())
+    .filter((s): s is RotateView => ROTATE_VIEWS.has(s));
+}
 
 function positiveInt(raw: string | null): number | null {
   if (raw === null) return null;
@@ -71,6 +89,13 @@ export function parseConfig(search: string): DashboardConfig {
       ? Math.max(MIN_REFRESH_MS, refreshSec * 1000)
       : DEFAULTS.refreshMs;
 
+  const rotateRaw = p.get("rotateSecs");
+  const rotateSec = rotateRaw === null ? null : Number.parseInt(rotateRaw, 10);
+  const rotateSecs =
+    rotateSec !== null && Number.isInteger(rotateSec) && rotateSec >= 1
+      ? Math.max(MIN_ROTATE_SECS, rotateSec)
+      : DEFAULTS.rotateSecs;
+
   return {
     groups: groups.length > 0 ? groups : null,
     cols: positiveInt(p.get("cols")),
@@ -90,6 +115,8 @@ export function parseConfig(search: string): DashboardConfig {
           ? "bracket"
           : "auto",
     bracket: p.get("bracket") === "focused" ? "focused" : "full",
+    rotate: rotateList(p.get("rotate")),
+    rotateSecs,
   };
 }
 
