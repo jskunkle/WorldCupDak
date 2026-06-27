@@ -170,6 +170,17 @@ describe("selectView", () => {
   it("auto: never bracket when there are no group games (empty data guard)", () => {
     expect(selectView([], t0, baseConfig)).toBe("standings");
   });
+
+  it("auto: stays on standings when knockout games map to no round (fallback source)", () => {
+    // Group stage done, but knockout games carry an unmapped matchday (0) →
+    // roundOf is null → the bracket would be empty, so do not switch to it.
+    const games = [
+      gGame("1", true),
+      gGame("2", true),
+      ko("90", 0, "a", "b", { kickoff: new Date(2026, 6, 1, 10, 0) }),
+    ];
+    expect(selectView(games, t0, baseConfig)).toBe("standings");
+  });
 });
 
 describe("activeRound", () => {
@@ -186,6 +197,15 @@ describe("activeRound", () => {
   it("falls back to final when every match is finished", () => {
     const games = [ko("104", 9, "a", "b", { finished: true })];
     const b = buildBracket(games, [], new Date(2026, 6, 20, 18, 0));
+    expect(activeRound(b)).toBe("final");
+  });
+
+  it("headlines the final over the third-place match when both are pending", () => {
+    const games = [
+      ko("103", 8, "a", "b"), // third place, upcoming
+      ko("104", 9, "c", "d"), // final, upcoming
+    ];
+    const b = buildBracket(games, [], new Date(2026, 6, 1, 18, 0));
     expect(activeRound(b)).toBe("final");
   });
 });

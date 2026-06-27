@@ -77,22 +77,30 @@ export function selectView(
   const allGroupDone =
     groupGames.length > 0 && groupGames.every((g) => g.finished);
 
+  // Only switch to the bracket once a knockout game maps to a real round.
+  // Otherwise — e.g. a fallback source that omits round info, leaving every
+  // knockout game at an unmapped matchday — the bracket would render empty.
+  // This also scopes the kickoff safety-net below to renderable games.
   const knockoutMs = games
-    .filter((g) => !g.isGroupStage)
+    .filter((g) => !g.isGroupStage && roundOf(g.matchday) !== null)
     .map((g) => g.kickoff.getTime());
-  const earliest = knockoutMs.length ? Math.min(...knockoutMs) : null;
+  const hasRenderableKnockout = knockoutMs.length > 0;
+  const earliest = hasRenderableKnockout ? Math.min(...knockoutMs) : null;
   const pastFirstKnockout = earliest !== null && now.getTime() > earliest;
 
-  return allGroupDone || pastFirstKnockout ? "bracket" : "standings";
+  return hasRenderableKnockout && (allGroupDone || pastFirstKnockout)
+    ? "bracket"
+    : "standings";
 }
 
+// Final ahead of third so the focused view headlines the final when both pend.
 const ACTIVE_ROUND_ORDER: KnockoutRound[] = [
   "r32",
   "r16",
   "qf",
   "sf",
-  "third",
   "final",
+  "third",
 ];
 
 export function activeRound(bracket: Bracket): KnockoutRound {
