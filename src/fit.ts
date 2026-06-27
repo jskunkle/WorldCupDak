@@ -52,3 +52,58 @@ export function fitToViewport(app: HTMLElement): void {
   );
   root.style.fontSize = `${best}px`;
 }
+
+// Leave a little vertical breathing room between stacked match boxes rather than
+// growing them until they touch.
+const BRACKET_VFILL = 0.92;
+
+/**
+ * Grows the root font-size so the knockout bracket fills `#app`: as large as
+ * possible while (a) `#app` doesn't overflow either axis (covers the center
+ * final column and total width), (b) the stacked match boxes in each column
+ * don't overlap, and (c) no team label is truncated. Bracket sizes are rem/em
+ * in fit mode, so this scales the whole board. Safe to call repeatedly.
+ */
+export function fitBracket(app: HTMLElement): void {
+  const root = document.documentElement;
+  const columns = Array.from(app.querySelectorAll<HTMLElement>(".bcol-cells"));
+  const names = Array.from(app.querySelectorAll<HTMLElement>(".bm-name"));
+  const board = app.querySelector<HTMLElement>(".bboard");
+
+  const fits = (fontPx: number): boolean => {
+    root.style.fontSize = `${fontPx}px`;
+    // Board must not overflow its viewport box in either axis.
+    if (
+      app.scrollHeight > app.clientHeight ||
+      app.scrollWidth > app.clientWidth
+    )
+      return false;
+    // Columns must fit side by side without one collapsing under width pressure
+    // (the thin center column has min-width:0 and would vanish otherwise).
+    if (board && board.scrollWidth > board.clientWidth) return false;
+    // Stacked match boxes must fit their column without overlapping. (Boxes can
+    // overlap inside fixed-height flex bands without growing scrollHeight, so
+    // this is checked explicitly rather than via overflow.)
+    for (const cells of columns) {
+      let stacked = 0;
+      for (const cell of Array.from(cells.children)) {
+        const box = cell.firstElementChild as HTMLElement | null;
+        if (box) stacked += box.offsetHeight;
+      }
+      if (stacked > cells.clientHeight * BRACKET_VFILL) return false;
+    }
+    // No team label clipped.
+    for (const name of names) {
+      if (name.scrollWidth > name.clientWidth + 1) return false;
+    }
+    return true;
+  };
+
+  const best = binarySearchLargest(
+    MIN_FONT_PX,
+    MAX_FONT_PX,
+    FIT_ITERATIONS,
+    fits,
+  );
+  root.style.fontSize = `${best}px`;
+}

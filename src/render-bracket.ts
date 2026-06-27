@@ -46,7 +46,11 @@ function slotRow(m: BracketMatch, slot: BracketSlot): HTMLElement {
     row.appendChild(img);
   }
 
-  row.appendChild(el("span", "bm-name", slot.tbd ? "TBD" : slot.name));
+  // Show the compact FIFA code (falls back to the name) so the auto-fit scaler
+  // can grow the bracket text large and keep it legible from across a room.
+  row.appendChild(
+    el("span", "bm-name", slot.tbd ? "TBD" : slot.code || slot.name),
+  );
   if (showScore(m, slot)) {
     row.appendChild(el("span", "bm-score", String(slot.score)));
   }

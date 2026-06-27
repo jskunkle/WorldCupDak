@@ -483,3 +483,31 @@ body {
 .brail-dot.live {
   background: var(--live);
 }
+
+/* Auto-fit (fit mode): express the full bracket's sizes in rem/em so
+   fitBracket() can scale the whole board up to fill the wall. Mirrors the
+   standings fit overrides above; the non-fit path keeps the clamp() sizes. */
+#app[data-fit="on"] .bracket-title {
+  font-size: 0.8rem;
+}
+#app[data-fit="on"] .bcol-label {
+  font-size: 0.45rem;
+}
+/* Keep the thin center column from collapsing to 0 under width pressure
+   (the base .bcol rule sets min-width:0 so labels can ellipsize). */
+#app[data-fit="on"] .bcol.final {
+  min-width: auto;
+}
+#app[data-fit="on"] .bcell {
+  padding: 0.22em 0.4vw;
+}
+#app[data-fit="on"] .bm-row {
+  font-size: 0.72rem;
+  padding: 0.16em 0.45em;
+}
+#app[data-fit="on"] .btrophy {
+  font-size: 1.5rem;
+}
+#app[data-fit="on"] .bthird {
+  font-size: 0.5rem;
+}

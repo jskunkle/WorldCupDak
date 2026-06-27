@@ -94,6 +94,37 @@ const GAMES = [
     finished: false,
     isGroupStage: false,
   },
+  // Two more R32 games → an even count per side, matching real data (the
+  // bracket's connectors assume even per-side counts, which is always true once
+  // all 16 R32 fixtures exist).
+  {
+    id: "75",
+    homeId: "1",
+    awayId: "3",
+    homeName: "Brazil",
+    awayName: "Germany",
+    homeScore: 0,
+    awayScore: 0,
+    group: "R32",
+    matchday: 4,
+    kickoff: "2026-06-30T12:00:00.000Z",
+    finished: false,
+    isGroupStage: false,
+  },
+  {
+    id: "76",
+    homeId: "2",
+    awayId: "4",
+    homeName: "Japan",
+    awayName: "Mexico",
+    homeScore: 0,
+    awayScore: 0,
+    group: "R32",
+    matchday: 4,
+    kickoff: "2026-07-01T12:00:00.000Z",
+    finished: false,
+    isGroupStage: false,
+  },
 ];
 
 async function mockApi(page: Page): Promise<void> {
@@ -117,9 +148,19 @@ test("view=bracket shows the full bracket with round columns", async ({
   // All six round columns render (r32/r16/qf/sf on both sides + final).
   await expect(page.locator('[data-round="r32"]').first()).toBeVisible();
   await expect(page.locator('[data-round="final"]')).toBeVisible();
-  // The mocked R32 matches are present.
+  // The mocked R32 matches are present, labeled by FIFA code.
   await expect(page.locator('[data-match="73"]')).toBeVisible();
   await expect(page.locator('[data-team="BRA"]').first()).toBeVisible();
+  // Auto-fit must scale the bracket to fill, not overflow, the viewport.
+  const overflow = await page.evaluate(() => {
+    const app = document.getElementById("app")!;
+    return {
+      dh: app.scrollHeight - app.clientHeight,
+      dw: app.scrollWidth - app.clientWidth,
+    };
+  });
+  expect(overflow.dw).toBeLessThanOrEqual(1);
+  expect(overflow.dh).toBeLessThanOrEqual(1);
 });
 
 test("view=bracket&bracket=focused shows large match cards", async ({

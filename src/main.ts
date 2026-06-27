@@ -4,7 +4,7 @@ import { renderStandings, renderScoreFeed } from "./render";
 import { selectView, buildBracket } from "./bracket";
 import { renderFullBracket, renderFocusedBracket } from "./render-bracket";
 import { parseConfig, deriveGrid } from "./config";
-import { fitToViewport } from "./fit";
+import { fitToViewport, fitBracket } from "./fit";
 import { needsTeamsRefresh } from "./refresh-policy";
 import { readCache, writeCache } from "./cache";
 import type { Snapshot, Team, Game } from "./types";
@@ -111,11 +111,14 @@ function paintBracket(): void {
   const bracket = buildBracket(lastGames, cachedTeams ?? [], new Date());
 
   if (config.bracket === "focused") {
+    // Focused cards are clamp-sized; clear any root font-size left by a fit pass.
+    document.documentElement.style.fontSize = "";
     renderFocusedBracket(bracketEl, bracket, focusPage);
     startFocusRotation();
   } else {
     stopFocusRotation();
     renderFullBracket(bracketEl, bracket);
+    if (config.fit) fitBracket(appEl);
   }
 }
 
@@ -167,10 +170,19 @@ document.addEventListener("visibilitychange", () => {
   }
 });
 
+function refit(): void {
+  if (!config.fit) return;
+  if (appEl.getAttribute("data-view") === "bracket") {
+    if (config.bracket === "full") fitBracket(appEl);
+  } else {
+    fitToViewport(appEl);
+  }
+}
+
 window.addEventListener("resize", () => {
   if (!config.fit) return;
   window.clearTimeout(resizeTimer);
-  resizeTimer = window.setTimeout(() => fitToViewport(appEl), 150);
+  resizeTimer = window.setTimeout(refit, 150);
 });
 
 seedFromCache();
