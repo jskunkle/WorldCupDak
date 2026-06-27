@@ -3,6 +3,7 @@ import type {
   BracketMatch,
   BracketSlot,
   KnockoutRound,
+  FeedKind,
 } from "./types";
 import { activeRound } from "./bracket";
 
@@ -38,7 +39,7 @@ function slotRow(m: BracketMatch, slot: BracketSlot): HTMLElement {
     const img = document.createElement("img");
     img.className = "bm-flag";
     img.src = slot.flagUrl;
-    img.alt = slot.code;
+    img.alt = slot.code || slot.name;
     img.addEventListener("error", () =>
       img.replaceWith(el("span", "bm-flagph")),
     );
@@ -135,7 +136,7 @@ export function renderFullBracket(
 const FOCUS_PAGE_SIZE = 4;
 const RAIL_ROUNDS: KnockoutRound[] = ["r32", "r16", "qf", "sf", "final"];
 
-const STATUS_RANK: Record<string, number> = {
+const STATUS_RANK: Record<FeedKind, number> = {
   live: 0,
   upcoming: 1,
   finished: 2,
@@ -166,7 +167,7 @@ function focusSide(slot: BracketSlot, side: "home" | "away"): HTMLElement {
   if (!slot.tbd && slot.flagUrl) {
     const img = document.createElement("img");
     img.src = slot.flagUrl;
-    img.alt = slot.code;
+    img.alt = slot.code || slot.name;
     img.addEventListener("error", () => img.remove());
     // Flag before name on the home side, after on the away side.
     if (side === "home") {

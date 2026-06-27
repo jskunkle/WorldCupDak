@@ -1,6 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { renderFullBracket } from "../src/render-bracket";
-import { renderFocusedBracket } from "../src/render-bracket";
+import { renderFullBracket, renderFocusedBracket } from "../src/render-bracket";
 import { buildBracket } from "../src/bracket";
 import type { Team, Game } from "../src/types";
 
