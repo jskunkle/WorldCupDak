@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { roundOf, buildBracket } from "../src/bracket";
+import { roundOf, buildBracket, selectView, activeRound } from "../src/bracket";
 import type { Team, Game } from "../src/types";
+import type { DashboardConfig } from "../src/config";
 
 function team(id: string, code: string): Team {
   return { id, code, name: code, flagUrl: `flag/${code}.png`, group: "A" };
@@ -112,5 +113,79 @@ describe("buildBracket", () => {
     const b = buildBracket(games, [], now);
     expect(b.final?.id).toBe("104");
     expect(b.third?.id).toBe("103");
+  });
+});
+
+const baseConfig: DashboardConfig = {
+  groups: null,
+  cols: null,
+  rows: null,
+  detail: "full",
+  scores: true,
+  upcoming: 5,
+  finished: 8,
+  refreshMs: 90_000,
+  theme: "dark",
+  highlight: [],
+  fit: true,
+  view: "auto",
+  bracket: "full",
+};
+
+function gGame(id: string, finished: boolean): Game {
+  return ko(id, 1, "a", "b", { isGroupStage: true, finished });
+}
+
+describe("selectView", () => {
+  const t0 = new Date(2026, 6, 1, 12, 0);
+
+  it("honors an explicit view override", () => {
+    const games = [gGame("1", false)];
+    expect(selectView(games, t0, { ...baseConfig, view: "bracket" })).toBe(
+      "bracket",
+    );
+    expect(selectView([], t0, { ...baseConfig, view: "standings" })).toBe(
+      "standings",
+    );
+  });
+
+  it("auto: standings while any group game is unfinished and no knockout has kicked off", () => {
+    const games = [gGame("1", true), gGame("2", false), ko("73", 4, "0", "0")];
+    expect(selectView(games, t0, baseConfig)).toBe("standings");
+  });
+
+  it("auto: bracket once every group game is finished", () => {
+    const games = [gGame("1", true), gGame("2", true), ko("73", 4, "0", "0")];
+    expect(selectView(games, t0, baseConfig)).toBe("bracket");
+  });
+
+  it("auto: bracket once now is past the earliest knockout kickoff (safety net)", () => {
+    const games = [
+      gGame("1", false),
+      ko("73", 4, "0", "0", { kickoff: new Date(2026, 6, 1, 10, 0) }),
+    ];
+    expect(selectView(games, t0, baseConfig)).toBe("bracket");
+  });
+
+  it("auto: never bracket when there are no group games (empty data guard)", () => {
+    expect(selectView([], t0, baseConfig)).toBe("standings");
+  });
+});
+
+describe("activeRound", () => {
+  it("returns the earliest round with an unfinished match", () => {
+    const games = [
+      ko("73", 4, "a", "b", { finished: true }),
+      ko("74", 4, "a", "b", { finished: true }),
+      ko("89", 5, "a", "b", { finished: false }),
+    ];
+    const b = buildBracket(games, [], new Date(2026, 6, 1, 18, 0));
+    expect(activeRound(b)).toBe("r16");
+  });
+
+  it("falls back to final when every match is finished", () => {
+    const games = [ko("104", 9, "a", "b", { finished: true })];
+    const b = buildBracket(games, [], new Date(2026, 6, 20, 18, 0));
+    expect(activeRound(b)).toBe("final");
   });
 });

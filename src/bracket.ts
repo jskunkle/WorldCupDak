@@ -6,6 +6,7 @@ import type {
   BracketSlot,
   KnockoutRound,
 } from "./types";
+import type { DashboardConfig } from "./config";
 import { classify } from "./standings";
 
 const ROUND_BY_MATCHDAY: Record<number, KnockoutRound> = {
@@ -62,6 +63,46 @@ function toMatch(
 function half(arr: BracketMatch[]): [BracketMatch[], BracketMatch[]] {
   const mid = Math.ceil(arr.length / 2);
   return [arr.slice(0, mid), arr.slice(mid)];
+}
+
+export function selectView(
+  games: Game[],
+  now: Date,
+  config: DashboardConfig,
+): "standings" | "bracket" {
+  if (config.view === "bracket" || config.view === "standings") {
+    return config.view;
+  }
+  const groupGames = games.filter((g) => g.isGroupStage);
+  const allGroupDone =
+    groupGames.length > 0 && groupGames.every((g) => g.finished);
+
+  const knockoffs = games
+    .filter((g) => !g.isGroupStage)
+    .map((g) => g.kickoff.getTime());
+  const earliest = knockoffs.length ? Math.min(...knockoffs) : null;
+  const pastFirstKnockout = earliest !== null && now.getTime() > earliest;
+
+  return allGroupDone || pastFirstKnockout ? "bracket" : "standings";
+}
+
+const ACTIVE_ROUND_ORDER: KnockoutRound[] = [
+  "r32",
+  "r16",
+  "qf",
+  "sf",
+  "third",
+  "final",
+];
+
+export function activeRound(bracket: Bracket): KnockoutRound {
+  for (const r of ACTIVE_ROUND_ORDER) {
+    const matches = bracket.rounds[r];
+    if (matches.length && matches.some((m) => m.status !== "finished")) {
+      return r;
+    }
+  }
+  return "final";
 }
 
 export function buildBracket(games: Game[], teams: Team[], now: Date): Bracket {
