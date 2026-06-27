@@ -1,6 +1,8 @@
 import { fetchTeams, fetchGames } from "./api";
 import { computeStandings, buildScoreFeed, filterGroups } from "./standings";
 import { renderStandings, renderScoreFeed } from "./render";
+import { selectView, buildBracket } from "./bracket";
+import { renderFullBracket, renderFocusedBracket } from "./render-bracket";
 import { parseConfig, deriveGrid } from "./config";
 import { fitToViewport } from "./fit";
 import { needsTeamsRefresh } from "./refresh-policy";
@@ -15,6 +17,7 @@ const CACHE_MAX_AGE_MS = 3_600_000; // use cached data for instant paint if < 1h
 const appEl = document.getElementById("app")!;
 const groupsEl = document.getElementById("groups")!;
 const scoresEl = document.getElementById("scores")!;
+const bracketEl = document.getElementById("bracket")!;
 
 // Apply one-time config to the DOM.
 document.documentElement.setAttribute("data-theme", config.theme);
@@ -26,6 +29,10 @@ let teamsFetchedAt: number | null = null;
 let lastGood: Snapshot | null = null;
 let timer: number | undefined;
 let resizeTimer: number | undefined;
+let lastGames: Game[] = [];
+let focusTimer: number | undefined;
+let focusPage = 0;
+const FOCUS_ROTATE_MS = 10_000;
 
 function buildSnapshot(teams: Team[], games: Game[]): Snapshot {
   return {
@@ -40,6 +47,7 @@ function buildSnapshot(teams: Team[], games: Game[]): Snapshot {
 async function refresh(): Promise<void> {
   try {
     const games = await fetchGames();
+    lastGames = games;
     const ids = cachedTeams ? new Set(cachedTeams.map((t) => t.id)) : null;
     if (
       needsTeamsRefresh(
@@ -70,6 +78,19 @@ async function refresh(): Promise<void> {
 }
 
 function paint(s: Snapshot): void {
+  const view = selectView(lastGames, new Date(), config);
+  appEl.setAttribute("data-view", view);
+
+  if (view === "bracket") {
+    paintBracket();
+    return;
+  }
+
+  stopFocusRotation();
+  bracketEl.style.display = "none";
+  groupsEl.style.display = "";
+  if (config.scores) scoresEl.style.display = "";
+
   const grid = deriveGrid(s.groups.length, config.cols, config.rows);
   groupsEl.style.setProperty("--cols", String(grid.cols));
   groupsEl.style.setProperty("--rows", String(grid.rows));
@@ -82,11 +103,43 @@ function paint(s: Snapshot): void {
   if (config.fit) fitToViewport(appEl);
 }
 
+function paintBracket(): void {
+  groupsEl.style.display = "none";
+  scoresEl.style.display = "none";
+  bracketEl.style.display = "";
+
+  const bracket = buildBracket(lastGames, cachedTeams ?? [], new Date());
+
+  if (config.bracket === "focused") {
+    renderFocusedBracket(bracketEl, bracket, focusPage);
+    startFocusRotation();
+  } else {
+    stopFocusRotation();
+    renderFullBracket(bracketEl, bracket);
+  }
+}
+
+function startFocusRotation(): void {
+  if (focusTimer !== undefined) return;
+  focusTimer = window.setInterval(() => {
+    focusPage += 1;
+    const bracket = buildBracket(lastGames, cachedTeams ?? [], new Date());
+    renderFocusedBracket(bracketEl, bracket, focusPage);
+  }, FOCUS_ROTATE_MS);
+}
+
+function stopFocusRotation(): void {
+  if (focusTimer === undefined) return;
+  window.clearInterval(focusTimer);
+  focusTimer = undefined;
+}
+
 // Paint instantly from a fresh-enough cache before the first network round-trip.
 function seedFromCache(): void {
   const cached = readCache(CACHE_MAX_AGE_MS, Date.now());
   if (!cached) return;
   cachedTeams = cached.teams;
+  lastGames = cached.games;
   teamsFetchedAt = Date.now();
   lastGood = buildSnapshot(cached.teams, cached.games);
   paint(lastGood);
@@ -106,6 +159,7 @@ function stop(): void {
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) {
     stop();
+    stopFocusRotation();
   } else {
     void refresh();
     start();
