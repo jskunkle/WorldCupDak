@@ -85,3 +85,32 @@ export interface Snapshot {
   groups: GroupTable[];
   feed: FeedMatch[];
 }
+
+export type KnockoutRound = "r32" | "r16" | "qf" | "sf" | "final" | "third";
+
+export interface BracketSlot {
+  tbd: boolean;
+  name: string; // "TBD" when tbd
+  code: string; // "" when tbd or unknown
+  flagUrl: string; // "" when tbd or unknown
+  score: number;
+}
+
+export interface BracketMatch {
+  id: string;
+  round: KnockoutRound;
+  status: FeedKind; // "live" | "finished" | "upcoming"
+  kickoff: Date;
+  home: BracketSlot;
+  away: BracketSlot;
+}
+
+export interface Bracket {
+  // Each side holds four columns ordered r32, r16, qf, sf (outer → inner).
+  left: BracketMatch[][];
+  right: BracketMatch[][];
+  final: BracketMatch | null;
+  third: BracketMatch | null;
+  // All matches per round, id-ordered — used by the focused view and progress rail.
+  rounds: Record<KnockoutRound, BracketMatch[]>;
+}
