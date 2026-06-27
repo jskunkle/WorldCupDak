@@ -132,6 +132,7 @@ function stopFocusRotation(): void {
   if (focusTimer === undefined) return;
   window.clearInterval(focusTimer);
   focusTimer = undefined;
+  focusPage = 0; // re-enter focused mode from the first page
 }
 
 // Paint instantly from a fresh-enough cache before the first network round-trip.
