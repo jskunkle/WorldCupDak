@@ -130,6 +130,8 @@ const baseConfig: DashboardConfig = {
   fit: true,
   view: "auto",
   bracket: "full",
+  rotate: [],
+  rotateSecs: 120,
 };
 
 function gGame(id: string, finished: boolean): Game {

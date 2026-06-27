@@ -38,9 +38,15 @@ binary directly instead:
 NODE="C:/Users/shane/AppData/Local/mise/installs/node/22.22.2/node.exe"
 "$NODE" node_modules/vitest/vitest.mjs run [path]              # tests
 "$NODE" node_modules/typescript/bin/tsc --noEmit -p worker/tsconfig.json
-"$NODE" node_modules/vite/bin/vite.js build                   # build
+"$NODE" node_modules/typescript/bin/tsc && \
+  "$NODE" node_modules/vite/bin/vite.js build                 # build (matches Render)
 "$NODE" node_modules/prettier/bin/prettier.cjs --write .      # format
 ```
+
+The deploy runs `pnpm build` = `tsc && vite build`. Always run `tsc` before
+`vite build`: `vite build` alone skips full type-checking, so type errors (e.g.
+a test using a now-incomplete `DashboardConfig` literal) pass locally but fail
+the Render build.
 
 `git` works normally. The node version in that path may change after upgrades.
 
