@@ -80,7 +80,7 @@ export function computeStandings(teams: Team[], games: Game[]): GroupTable[] {
 const MAX_UPCOMING = 5;
 const MAX_FINISHED = 8;
 
-function classify(g: Game, now: Date): FeedKind {
+export function classify(g: Game, now: Date): FeedKind {
   if (g.finished) return "finished";
   return g.kickoff <= now ? "live" : "upcoming";
 }
