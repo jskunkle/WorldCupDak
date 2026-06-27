@@ -1,102 +1,98 @@
 # World Cup 2026 DAKboard — Tasks
 
-Plan: `docs/superpowers/plans/2026-06-16-data-proxy-worker.md`
-Spec: `docs/superpowers/specs/2026-06-16-data-proxy-worker-design.md`
+Plan: `docs/superpowers/plans/2026-06-27-knockout-bracket.md`
+Spec: `docs/superpowers/specs/2026-06-27-knockout-bracket-design.md`
 
-Cloudflare Worker data layer with worldcup26.ir → football-data.org failover.
+Knockout bracket view with automatic standings→bracket switchover and
+query-string control. Client-only (Worker already serves all 104 games).
 
-## Task 1 — Worker scaffolding & config
+## Task 0 — Branch
 
-- [ ] `pnpm add -D wrangler @cloudflare/workers-types`
-- [ ] Add `worker:typecheck` / `worker:dev` / `worker:deploy` scripts to `package.json`
-- [ ] Add `worker/**/*.test.ts` to Vitest `include` in `vite.config.ts`
-- [ ] Create `worker/tsconfig.json`
-- [ ] Create `worker/wrangler.toml` (KV binding, cron, compat date)
-- [ ] Verify `pnpm wrangler --version`
-- [ ] Commit
+- [ ] `git checkout -b feat/knockout-bracket`
+- [ ] Confirm clean working tree
 
-## Task 2 — Content-hash util
+## Task 1 — Config: `view` + `bracket` params
 
-- [ ] Write failing `worker/hash.test.ts`
+- [ ] Write failing `tests/config.test.ts` (defaults + parsing)
 - [ ] Verify it fails
-- [ ] Implement `worker/hash.ts` (djb2)
+- [ ] Add `view`/`bracket` to `DashboardConfig`, `DEFAULTS`, `parseConfig`
 - [ ] Verify it passes
 - [ ] Commit
 
-## Task 3 — Timeout util
+## Task 2 — Export `classify`
 
-- [ ] Write failing `worker/timeout.test.ts`
+- [ ] Export `classify` from `src/standings.ts`
+- [ ] `tests/standings.test.ts` still passes
+- [ ] Commit
+
+## Task 3 — Bracket types
+
+- [ ] Add `KnockoutRound`, `BracketSlot`, `BracketMatch`, `Bracket` to `src/types.ts`
+- [ ] Typecheck
+- [ ] Commit
+
+## Task 4 — `buildBracket` (pure, TDD)
+
+- [ ] Write failing `tests/bracket.test.ts` (roundOf, bucket, id-order, half-split, TBD join, status, final/third)
 - [ ] Verify it fails
-- [ ] Implement `worker/timeout.ts` (`withTimeout`)
+- [ ] Implement `src/bracket.ts` (`roundOf`, `buildBracket`)
 - [ ] Verify it passes
 - [ ] Commit
 
-## Task 4 — Source interface & failover
+## Task 5 — `selectView` + `activeRound` (pure, TDD)
 
-- [ ] Create `worker/sources/source.ts` (`Source`, `SourceSnapshot`)
-- [ ] Write failing `worker/failover.test.ts`
+- [ ] Add failing tests (override, auto branches, safety net, empty guard, active round)
+- [ ] Verify they fail
+- [ ] Implement `selectView`, `activeRound` in `src/bracket.ts`
+- [ ] Verify they pass
+- [ ] Commit
+
+## Task 6 — Container + styles
+
+- [ ] Add `#bracket` section to `index.html`
+- [ ] Add bracket + focused CSS to `src/styles.css`
+- [ ] Commit
+
+## Task 7 — Full bracket renderer (TDD)
+
+- [ ] Write failing `tests/render-bracket.test.ts`
 - [ ] Verify it fails
-- [ ] Implement `worker/failover.ts` (`fetchSnapshotWithFailover`)
+- [ ] Implement `renderFullBracket` in `src/render-bracket.ts`
 - [ ] Verify it passes
 - [ ] Commit
 
-## Task 5 — worldcup26 adapter (move normalizers)
+## Task 8 — Focused renderer (TDD)
 
-- [ ] Write failing `worker/sources/worldcup26.test.ts` (ported from `tests/api.test.ts`)
-- [ ] Verify it fails
-- [ ] Implement `worker/sources/worldcup26.ts` (normalizers + `worldcup26Source`)
-- [ ] Verify it passes
+- [ ] Add failing focused tests
+- [ ] Verify they fail
+- [ ] Implement `renderFocusedBracket` (+ `orderForFocus`, progress rail)
+- [ ] Verify they pass
 - [ ] Commit
 
-## Task 6 — football-data.org adapter
+## Task 9 — Wire into `main.ts`
 
-- [ ] Write failing `worker/sources/football-data.test.ts` (fixtures + group derivation)
-- [ ] Verify it fails
-- [ ] Implement `worker/sources/football-data.ts` (normalizers + `createFootballDataSource`)
-- [ ] Verify it passes
+- [ ] Imports + `lastGames`/focus-rotation state
+- [ ] Capture `lastGames` in `refresh` + `seedFromCache`
+- [ ] View-aware `paint` + `paintBracket` + rotation start/stop
+- [ ] Stop rotation on `visibilitychange` hidden
+- [ ] `vite build` clean
 - [ ] Commit
 
-## Task 7 — Refresh orchestration
+## Task 10 — E2E
 
-- [ ] Write failing `worker/refresh.test.ts` (fake KV + fake sources)
-- [ ] Verify it fails
-- [ ] Implement `worker/refresh.ts` (`refreshSnapshot`, `KVStore`, hash-gated write)
-- [ ] Verify it passes
+- [ ] Create `e2e/bracket.spec.ts` (forced bracket, focused, standings)
+- [ ] Run e2e green
 - [ ] Commit
 
-## Task 8 — Request handler
+## Task 11 — Docs + format + full suite
 
-- [ ] Write failing `worker/handler.test.ts`
-- [ ] Verify it fails
-- [ ] Implement `worker/handler.ts` (routing, CORS, cold populate, 503)
-- [ ] Verify it passes
+- [ ] Document `view`/`bracket` in `README.md` + `CLAUDE.md`
+- [ ] `prettier --write .`
+- [ ] Full `vitest run` passes
+- [ ] `vite build` clean
 - [ ] Commit
 
-## Task 9 — Worker entry point
+## Task 12 — Manual verify + PR
 
-- [ ] Implement `worker/index.ts` (`Env`, `fetch`, `scheduled`)
-- [ ] `pnpm worker:typecheck` passes
-- [ ] `pnpm test` (full suite) passes
-- [ ] Commit
-
-## Task 10 — Repoint client at Worker
-
-- [ ] Rewrite `tests/api.test.ts` for the new contract; verify it fails
-- [ ] Rewrite `src/api.ts` (drop normalization, revive kickoff, `VITE_API_BASE`)
-- [ ] Verify `tests/api.test.ts` passes
-- [ ] `pnpm test && pnpm build` clean (add `src/vite-env.d.ts` if needed)
-- [ ] Commit
-
-## Task 11 — Deploy & wire-up (manual)
-
-- [ ] `! pnpm wrangler login`
-- [ ] Create KV namespace; put its id in `worker/wrangler.toml`
-- [ ] `! pnpm wrangler secret put FOOTBALL_DATA_TOKEN`
-- [ ] Local smoke test (`pnpm worker:dev` + curl)
-- [ ] `pnpm worker:deploy`; note the Worker URL
-- [ ] Add `VITE_API_BASE` to `render.yaml`; rebuild
-- [ ] Verify deployed Worker via curl
-- [ ] Browser smoke test (empty-cache reload paints fast)
-- [ ] Rotate the football-data.org token; re-set secret; redeploy
-- [ ] Update `CLAUDE.md` / `README.md`; `pnpm format`
-- [ ] Commit
+- [ ] Smoke test `/?view=bracket`, `?bracket=focused`, `?view=standings`, `/`
+- [ ] Push + open PR (when asked)
