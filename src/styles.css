@@ -234,9 +234,11 @@ body {
   display: flex;
   min-height: 0;
 }
+/* Each side holds 4 columns; flex:4 vs the final's flex:1 makes all 9 columns
+   (and therefore every match box) the same width. */
 .bside {
   display: flex;
-  flex: 1;
+  flex: 4;
   min-height: 0;
 }
 .bcol {
@@ -245,11 +247,8 @@ body {
   flex: 1;
   min-width: 0;
 }
-.bcol.r32 {
-  flex: 1.5;
-}
 .bcol.final {
-  flex: 1.1;
+  flex: 1;
 }
 .bcol-label {
   text-align: center;
@@ -492,11 +491,6 @@ body {
 }
 #app[data-fit="on"] .bcol-label {
   font-size: 0.45rem;
-}
-/* Keep the thin center column from collapsing to 0 under width pressure
-   (the base .bcol rule sets min-width:0 so labels can ellipsize). */
-#app[data-fit="on"] .bcol.final {
-  min-width: auto;
 }
 #app[data-fit="on"] .bcell {
   padding: 0.22em 0.4vw;
