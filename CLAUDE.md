@@ -11,6 +11,13 @@ computed client-side. See `README.md` for URL params and deploy.
   fallback. `api.ts` fetches **already-normalized** `Team[]`/`Game[]` from the
   Worker (see below) and revives `kickoff` to a `Date`.
 - The client also derives a knockout `Bracket` from the same games (`bracket.ts`, round inferred from `matchday`) and `main.ts` auto-switches standings → bracket via `selectView`. Layouts live in `render-bracket.ts`. The full bracket auto-scales via `fitBracket`. With `?rotate=`, `main.ts` cycles through views on a timer instead.
+- Winners advance client-side (`advance.ts`, `resolveAdvancement`): the data
+  source never fills future knockout games — it leaves them at placeholder team
+  id `"0"` with a feeder label like `"Winner Match 73"` / `"Loser Match 101"`.
+  `main.ts` resolves those labels against finished, decisive matches (it can't
+  resolve a level/shootout result — no penalty data exists), filling placeholder
+  slots only (never overwriting real teams) and iterating so wins cascade across
+  rounds. Runs on every fetch before `buildBracket`.
 - `worker/` — a Cloudflare Worker data layer (caching + multi-source failover).
   A Cron trigger refreshes a full snapshot (teams + games from the **same**
   source, so team-id spaces match) into Workers KV, writing only when content

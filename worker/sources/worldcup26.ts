@@ -35,6 +35,8 @@ export function normalizeGames(raw: RawGame[]): Game[] {
     kickoff: parseKickoff(g.local_date),
     finished: g.finished === "TRUE",
     isGroupStage: g.type === "group",
+    homeLabel: g.home_team_label,
+    awayLabel: g.away_team_label,
   }));
 }
 

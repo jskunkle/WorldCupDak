@@ -22,6 +22,8 @@ export interface RawGame {
   type: string; // "group" for group-stage matches
   home_team_name_en: string;
   away_team_name_en: string;
+  home_team_label: string; // e.g. "Winner Match 73" on undecided knockout slots
+  away_team_label: string;
 }
 
 // Normalized domain types used everywhere else.
@@ -46,6 +48,12 @@ export interface Game {
   kickoff: Date;
   finished: boolean;
   isGroupStage: boolean;
+  // Source-provided feeder description for a slot, e.g. "Winner Match 73" or
+  // "Loser Match 101" on knockout games whose teams aren't decided yet. Used to
+  // advance winners into the next round client-side. Optional: not every source
+  // (e.g. the football-data fallback) supplies them.
+  homeLabel?: string;
+  awayLabel?: string;
 }
 
 export interface StandingRow {

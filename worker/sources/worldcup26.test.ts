@@ -25,6 +25,8 @@ const finishedGame: RawGame = {
   type: "group",
   home_team_name_en: "Mexico",
   away_team_name_en: "South Africa",
+  home_team_label: "Winner Group A",
+  away_team_label: "Runner-up Group A",
 };
 
 describe("normalizeTeams", () => {
@@ -63,6 +65,18 @@ describe("normalizeGames", () => {
       normalizeGames([{ ...finishedGame, type: "round_of_32" }])[0]
         .isGroupStage,
     ).toBe(false);
+  });
+
+  it("carries the feeder labels through for client-side advancement", () => {
+    const [g] = normalizeGames([
+      {
+        ...finishedGame,
+        home_team_label: "Winner Match 73",
+        away_team_label: "Loser Match 101",
+      },
+    ]);
+    expect(g.homeLabel).toBe("Winner Match 73");
+    expect(g.awayLabel).toBe("Loser Match 101");
   });
 
   it("coerces malformed numeric fields to 0 instead of NaN", () => {

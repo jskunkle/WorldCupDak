@@ -2,6 +2,7 @@ import { fetchTeams, fetchGames } from "./api";
 import { computeStandings, buildScoreFeed, filterGroups } from "./standings";
 import { renderStandings, renderScoreFeed } from "./render";
 import { selectView, buildBracket, bracketHasMatches } from "./bracket";
+import { resolveAdvancement } from "./advance";
 import { renderFullBracket, renderFocusedBracket } from "./render-bracket";
 import { parseConfig, deriveGrid, type RotateView } from "./config";
 import { fitToViewport, fitBracket } from "./fit";
@@ -70,7 +71,10 @@ function buildSnapshot(teams: Team[], games: Game[]): Snapshot {
 
 async function refresh(): Promise<void> {
   try {
-    const games = await fetchGames();
+    // Advance winners into the next round client-side: the data source leaves
+    // future knockout games at placeholder team id "0" even after a feeder match
+    // finishes, so a team would otherwise never appear past its current round.
+    const games = resolveAdvancement(await fetchGames());
     lastGames = games;
     const ids = cachedTeams ? new Set(cachedTeams.map((t) => t.id)) : null;
     if (
@@ -174,10 +178,11 @@ function stopFocusRotation(): void {
 function seedFromCache(): void {
   const cached = readCache(CACHE_MAX_AGE_MS, Date.now());
   if (!cached) return;
+  const games = resolveAdvancement(cached.games);
   cachedTeams = cached.teams;
-  lastGames = cached.games;
+  lastGames = games;
   teamsFetchedAt = Date.now();
-  lastGood = buildSnapshot(cached.teams, cached.games);
+  lastGood = buildSnapshot(cached.teams, games);
   paint(lastGood);
 }
 
