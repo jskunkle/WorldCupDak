@@ -65,6 +65,41 @@ function half(arr: BracketMatch[]): [BracketMatch[], BracketMatch[]] {
   return [arr.slice(0, mid), arr.slice(mid)];
 }
 
+// Official FIFA World Cup 2026 knockout topology, keyed by the source's match
+// ids (= FIFA match numbers). Each round lists its matches in bracket position
+// order, top → bottom: the first half is the top side of the draw (feeding one
+// finalist), the second half the bottom side. Adjacent pairs are the feeders of
+// the next round (e.g. R32 74 & 77 → R16 89). This replaces the original
+// assumption that ascending id order equals bracket order — it does not (match
+// 74 sits above 77, but 73 sits below them). Verified against the official/ESPN
+// bracket. Splitting each list at its midpoint yields the left/right halves.
+type SplitRound = "r32" | "r16" | "qf" | "sf";
+const BRACKET_ORDER: Record<SplitRound, string[]> = {
+  // prettier-ignore
+  r32: ["74","77","73","75","83","84","81","82","76","78","79","80","86","88","85","87"],
+  r16: ["89", "90", "93", "94", "91", "92", "95", "96"],
+  qf: ["97", "98", "99", "100"],
+  sf: ["101", "102"],
+};
+
+// Position of a match in its round's bracket order. Unknown ids (e.g. a fallback
+// source with a different id space) sort after the known ones, in ascending id
+// order, so the layout degrades sanely instead of dropping or misplacing them.
+function bracketPos(round: SplitRound, id: string): number {
+  const order = BRACKET_ORDER[round];
+  const i = order.indexOf(id);
+  return i === -1 ? order.length + (Number(id) || 0) : i;
+}
+
+function orderForSide(
+  round: SplitRound,
+  matches: BracketMatch[],
+): BracketMatch[] {
+  return [...matches].sort(
+    (a, b) => bracketPos(round, a.id) - bracketPos(round, b.id),
+  );
+}
+
 export function selectView(
   games: Game[],
   now: Date,
@@ -143,10 +178,12 @@ export function buildBracket(games: Game[], teams: Team[], now: Date): Bracket {
     rounds[r].sort((a, b) => Number(a.id) - Number(b.id));
   }
 
-  const [r32L, r32R] = half(rounds.r32);
-  const [r16L, r16R] = half(rounds.r16);
-  const [qfL, qfR] = half(rounds.qf);
-  const [sfL, sfR] = half(rounds.sf);
+  // rounds[r] stays id-sorted (used by the focused view and progress rail); the
+  // left/right columns are ordered by bracket position so connectors line up.
+  const [r32L, r32R] = half(orderForSide("r32", rounds.r32));
+  const [r16L, r16R] = half(orderForSide("r16", rounds.r16));
+  const [qfL, qfR] = half(orderForSide("qf", rounds.qf));
+  const [sfL, sfR] = half(orderForSide("sf", rounds.sf));
 
   return {
     left: [r32L, r16L, qfL, sfL],

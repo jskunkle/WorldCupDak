@@ -54,13 +54,16 @@ New pure function `selectView(games, now, config) → "standings" | "bracket"`.
 New `src/bracket.ts`: `buildBracket(games, teams, now) → Bracket`.
 
 - Filter to knockout games (`!isGroupStage`), bucket by `type`.
-- Within each round, order games by ascending numeric `id`. **Assumption:**
-  id-order equals bracket order top→bottom, and adjacent pairs feed the next
-  round. This drives only _visual_ adjacency/connectors — team names are always
-  source-provided, so a wrong assumption is cosmetic, not data-wrong. The
-  round→round linkage lives in a single constant so it is trivial to correct if
-  verification (once real teams populate R16+) shows otherwise.
-- Split each round's ordered games into a left half (first N/2) and right half.
+- For the left/right columns, order each round's games by their **bracket
+  position**, not by `id`. The original assumption (id-order == bracket order,
+  adjacent pairs feed the next round) was **wrong** — confirmed once R32 teams
+  populated (2026-06-28): it put half the teams on the wrong side of the final
+  and mispaired R16 matchups (e.g. RSA/CAN vs GER/PAR instead of GER/PAR vs
+  FRA/SWE). The correct topology lives in the single `BRACKET_ORDER` constant,
+  keyed by FIFA match number, verified against the official/ESPN bracket. (The
+  `rounds[r]` map stays id-sorted; it feeds only the focused view and rail.)
+- Split each round's bracket-ordered games into a left half (first N/2, the top
+  side of the draw) and right half (bottom side).
 - Resolve each slot: join `homeId`/`awayId` to `teams` for `{ name, code,
 flagUrl }`; `id === "0"` → `{ tbd: true }`. Carry `homeScore`/`awayScore`.
 - Per-match status reuses the existing `classify(game, now)` →
@@ -129,10 +132,12 @@ R32 team names render; `?view=bracket&bracket=focused` shows large cards.
 
 ## Unresolved questions
 
-1. **Bracket linkage (main risk):** id-order adjacency is assumed for connector
-   positioning. It can't be fully verified until R16+ teams populate (post-R32).
-   Acceptable because names are source-provided; if connectors mislead, correct
-   the single linkage constant. OK to proceed on the assumption?
+1. ~~**Bracket linkage (main risk):** id-order adjacency is assumed for
+   connector positioning.~~ **RESOLVED (2026-06-28):** the assumption was wrong.
+   A reddit user reported the matchups/sides were off; verified against the
+   official/ESPN bracket and replaced id-order with the `BRACKET_ORDER` constant
+   (FIFA match-number topology). It was data-wrong, not merely cosmetic — who you
+   play next and which side of the final you're on were both incorrect.
 2. **Score ticker in bracket mode:** plan hides it (the bracket shows scores
    inline). Keep it hidden, or keep the ticker for at-a-glance scores?
 3. **Focused-view rotation cadence:** default 10s/page — fine, or tie it to the

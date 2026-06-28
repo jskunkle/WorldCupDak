@@ -73,11 +73,48 @@ describe("buildBracket", () => {
     expect(b.rounds.r16.map((m) => m.id)).toEqual(["89"]);
   });
 
-  it("splits each round into left (first half) and right (second half)", () => {
-    const games = [73, 74, 75, 76].map((n) => ko(String(n), 4, "0", "0"));
-    const b = buildBracket(games, [], now);
-    expect(b.left[0].map((m) => m.id)).toEqual(["73", "74"]);
-    expect(b.right[0].map((m) => m.id)).toEqual(["75", "76"]);
+  it("orders each round by FIFA bracket position and splits into halves", () => {
+    // Ids are FIFA match numbers. Bracket position is NOT ascending id order:
+    // the top half of the draw (one finalist) is the left side, the bottom half
+    // the right. Verified against the official/ESPN 2026 bracket.
+    const r32 = [
+      73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88,
+    ].map((n) => ko(String(n), 4, "0", "0"));
+    const r16 = [89, 90, 91, 92, 93, 94, 95, 96].map((n) =>
+      ko(String(n), 5, "0", "0"),
+    );
+    const qf = [97, 98, 99, 100].map((n) => ko(String(n), 6, "0", "0"));
+    const sf = [101, 102].map((n) => ko(String(n), 7, "0", "0"));
+    const b = buildBracket([...r32, ...r16, ...qf, ...sf], [], now);
+
+    // R32: adjacent pairs are the official R16 feeders, e.g. (74,77) and (73,75).
+    expect(b.left[0].map((m) => m.id)).toEqual([
+      "74",
+      "77",
+      "73",
+      "75",
+      "83",
+      "84",
+      "81",
+      "82",
+    ]);
+    expect(b.right[0].map((m) => m.id)).toEqual([
+      "76",
+      "78",
+      "79",
+      "80",
+      "86",
+      "88",
+      "85",
+      "87",
+    ]);
+    // R16/QF/SF columns line up so each match centers between its two feeders.
+    expect(b.left[1].map((m) => m.id)).toEqual(["89", "90", "93", "94"]);
+    expect(b.right[1].map((m) => m.id)).toEqual(["91", "92", "95", "96"]);
+    expect(b.left[2].map((m) => m.id)).toEqual(["97", "98"]);
+    expect(b.right[2].map((m) => m.id)).toEqual(["99", "100"]);
+    expect(b.left[3].map((m) => m.id)).toEqual(["101"]);
+    expect(b.right[3].map((m) => m.id)).toEqual(["102"]);
   });
 
   it("joins real teams to flags and marks id '0' as TBD", () => {
