@@ -92,6 +92,20 @@ describe("renderFullBracket", () => {
     renderFullBracket(c, sampleBracket());
     expect(c.querySelectorAll('[data-round="r32"]')).toHaveLength(2); // one per side
   });
+
+  it("omits kickoff captions by default", () => {
+    const c = document.createElement("div");
+    renderFullBracket(c, sampleBracket());
+    expect(c.querySelector(".bm-when")).toBeNull();
+  });
+
+  it("shows a kickoff caption per match when showTimes is true", () => {
+    const c = document.createElement("div");
+    renderFullBracket(c, sampleBracket(), true);
+    const when = c.querySelector('[data-match="73"] .bm-when');
+    expect(when).toBeTruthy();
+    expect(when!.textContent).toContain("·");
+  });
 });
 
 describe("renderFocusedBracket", () => {
