@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { renderFullBracket, renderFocusedBracket } from "../src/render-bracket";
+import {
+  renderFullBracket,
+  renderFocusedBracket,
+  kickoffCaption,
+} from "../src/render-bracket";
 import { buildBracket } from "../src/bracket";
 import type { Team, Game } from "../src/types";
 
@@ -135,5 +139,17 @@ describe("renderFocusedBracket", () => {
     renderFocusedBracket(c, focusBracket(), 0);
     renderFocusedBracket(c, focusBracket(), 1);
     expect(c.querySelectorAll(".bfocus-main")).toHaveLength(1);
+  });
+});
+
+describe("kickoffCaption", () => {
+  it("formats month, day, and time joined by a middle dot", () => {
+    // Force a fixed locale so the assertion is deterministic.
+    const d = new Date(2026, 6, 4, 14, 0); // Jul 4 2026, 14:00 local
+    const caption = kickoffCaption(d, "en-GB");
+    expect(caption).toContain("Jul");
+    expect(caption).toContain("4");
+    expect(caption).toContain("·");
+    expect(caption).toMatch(/\d/); // contains a time digit
   });
 });

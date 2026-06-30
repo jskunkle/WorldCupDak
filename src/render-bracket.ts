@@ -18,6 +18,18 @@ const ROUND_LABEL: Record<KnockoutRound, string> = {
 
 const LEFT_COLUMN_ROUNDS: KnockoutRound[] = ["r32", "r16", "qf", "sf"];
 
+// "Jul 4 · 14:00" — month+day and time joined by a middle dot. Locale/timezone
+// come from the viewer (the DAKboard display), matching the focused view's
+// approach; `locale` is injectable so the format is unit-testable.
+export function kickoffCaption(date: Date, locale?: string): string {
+  const day = date.toLocaleString(locale, { month: "short", day: "numeric" });
+  const time = date.toLocaleString(locale, {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+  return `${day} · ${time}`;
+}
+
 function el(tag: string, className?: string, text?: string): HTMLElement {
   const node = document.createElement(tag);
   if (className) node.className = className;
