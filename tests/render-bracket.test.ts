@@ -105,6 +105,9 @@ describe("renderFullBracket", () => {
     const when = c.querySelector('[data-match="73"] .bm-when');
     expect(when).toBeTruthy();
     expect(when!.textContent).toContain("·");
+    // Every match gets a caption, not just the first — guards the forwarding
+    // of showTimes through columnEl. sampleBracket() has two matches.
+    expect(c.querySelectorAll(".bm-when")).toHaveLength(2);
   });
 });
 
