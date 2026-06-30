@@ -109,6 +109,20 @@ describe("renderFullBracket", () => {
     // of showTimes through columnEl. sampleBracket() has two matches.
     expect(c.querySelectorAll(".bm-when")).toHaveLength(2);
   });
+
+  it("shows a caption on the final match too when showTimes is true", () => {
+    // The final renders via finalColumn, a separate path from sideEl/columnEl.
+    // matchday 9 → the final game (id 104).
+    const games = [
+      ko("104", 9, "0", "0", { kickoff: new Date(2026, 6, 19, 15, 0) }),
+    ];
+    const bracket = buildBracket(games, [], new Date(2026, 6, 1, 18, 0));
+    const c = document.createElement("div");
+    renderFullBracket(c, bracket, true);
+    const finalBox = c.querySelector('[data-match="104"].final-box');
+    expect(finalBox).toBeTruthy();
+    expect(finalBox!.querySelector(".bm-when")).toBeTruthy();
+  });
 });
 
 describe("renderFocusedBracket", () => {
