@@ -173,6 +173,7 @@ const baseConfig: DashboardConfig = {
   fit: true,
   view: "auto",
   bracket: "full",
+  bracketTimes: false,
   rotate: [],
   rotateSecs: 120,
 };
