@@ -18,6 +18,18 @@ const ROUND_LABEL: Record<KnockoutRound, string> = {
 
 const LEFT_COLUMN_ROUNDS: KnockoutRound[] = ["r32", "r16", "qf", "sf"];
 
+// "Jul 4 · 14:00" — month+day and time joined by a middle dot. Locale/timezone
+// come from the viewer (the DAKboard display), matching the focused view's
+// approach; `locale` is injectable so the format is unit-testable.
+export function kickoffCaption(date: Date, locale?: string): string {
+  const day = date.toLocaleString(locale, { month: "short", day: "numeric" });
+  const time = date.toLocaleString(locale, {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+  return `${day} · ${time}`;
+}
+
 function el(tag: string, className?: string, text?: string): HTMLElement {
   const node = document.createElement(tag);
   if (className) node.className = className;
@@ -57,22 +69,33 @@ function slotRow(m: BracketMatch, slot: BracketSlot): HTMLElement {
   return row;
 }
 
-function matchEl(m: BracketMatch, extraClass = ""): HTMLElement {
+function matchEl(
+  m: BracketMatch,
+  showTimes = false,
+  extraClass = "",
+): HTMLElement {
   const box = el("div", `bm${m.status === "live" ? " live" : ""}${extraClass}`);
   box.setAttribute("data-match", m.id);
   box.appendChild(slotRow(m, m.home));
   box.appendChild(slotRow(m, m.away));
+  if (showTimes) {
+    box.appendChild(el("div", "bm-when", kickoffCaption(m.kickoff)));
+  }
   return box;
 }
 
-function columnEl(matches: BracketMatch[], round: KnockoutRound): HTMLElement {
+function columnEl(
+  matches: BracketMatch[],
+  round: KnockoutRound,
+  showTimes = false,
+): HTMLElement {
   const col = el("div", `bcol ${round}`);
   col.setAttribute("data-round", round);
   col.appendChild(el("div", "bcol-label", ROUND_LABEL[round]));
   const cells = el("div", "bcol-cells");
   for (const m of matches) {
     const cell = el("div", "bcell");
-    cell.appendChild(matchEl(m));
+    cell.appendChild(matchEl(m, showTimes));
     cells.appendChild(cell);
   }
   col.appendChild(cells);
@@ -82,6 +105,7 @@ function columnEl(matches: BracketMatch[], round: KnockoutRound): HTMLElement {
 function sideEl(
   columns: BracketMatch[][],
   side: "left" | "right",
+  showTimes = false,
 ): HTMLElement {
   const wrap = el("div", `bside ${side}`);
   // left renders outer→inner (r32..sf); right renders inner→outer (sf..r32).
@@ -90,12 +114,12 @@ function sideEl(
       ? LEFT_COLUMN_ROUNDS.map((_, i) => i)
       : LEFT_COLUMN_ROUNDS.map((_, i) => LEFT_COLUMN_ROUNDS.length - 1 - i);
   for (const i of order) {
-    wrap.appendChild(columnEl(columns[i], LEFT_COLUMN_ROUNDS[i]));
+    wrap.appendChild(columnEl(columns[i], LEFT_COLUMN_ROUNDS[i], showTimes));
   }
   return wrap;
 }
 
-function finalColumn(bracket: Bracket): HTMLElement {
+function finalColumn(bracket: Bracket, showTimes = false): HTMLElement {
   const col = el("div", "bcol final");
   col.setAttribute("data-round", "final");
   col.appendChild(el("div", "bcol-label", ROUND_LABEL.final));
@@ -103,7 +127,7 @@ function finalColumn(bracket: Bracket): HTMLElement {
   const cell = el("div", "bcell bfinal-cell");
   cell.appendChild(el("div", "btrophy", "🏆"));
   if (bracket.final) {
-    cell.appendChild(matchEl(bracket.final, " final-box"));
+    cell.appendChild(matchEl(bracket.final, showTimes, " final-box"));
   }
   const thirdText = bracket.third
     ? thirdLabel(bracket.third)
@@ -125,15 +149,16 @@ function thirdLabel(m: BracketMatch): string {
 export function renderFullBracket(
   container: HTMLElement,
   bracket: Bracket,
+  showTimes = false,
 ): void {
   container.replaceChildren();
   container.appendChild(
     el("h2", "bracket-title", "FIFA World Cup 2026 — Knockout Bracket"),
   );
   const board = el("div", "bboard");
-  board.appendChild(sideEl(bracket.left, "left"));
-  board.appendChild(finalColumn(bracket));
-  board.appendChild(sideEl(bracket.right, "right"));
+  board.appendChild(sideEl(bracket.left, "left", showTimes));
+  board.appendChild(finalColumn(bracket, showTimes));
+  board.appendChild(sideEl(bracket.right, "right", showTimes));
   container.appendChild(board);
 }
 

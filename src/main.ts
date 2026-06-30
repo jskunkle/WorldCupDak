@@ -152,7 +152,7 @@ function paintBracket(layout: "full" | "focused", bracket: Bracket): void {
     startFocusRotation();
   } else {
     stopFocusRotation();
-    renderFullBracket(bracketEl, bracket);
+    renderFullBracket(bracketEl, bracket, config.bracketTimes);
     if (config.fit) fitBracket(appEl);
   }
 }

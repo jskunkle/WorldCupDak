@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { renderFullBracket, renderFocusedBracket } from "../src/render-bracket";
+import {
+  renderFullBracket,
+  renderFocusedBracket,
+  kickoffCaption,
+} from "../src/render-bracket";
 import { buildBracket } from "../src/bracket";
 import type { Team, Game } from "../src/types";
 
@@ -88,6 +92,37 @@ describe("renderFullBracket", () => {
     renderFullBracket(c, sampleBracket());
     expect(c.querySelectorAll('[data-round="r32"]')).toHaveLength(2); // one per side
   });
+
+  it("omits kickoff captions by default", () => {
+    const c = document.createElement("div");
+    renderFullBracket(c, sampleBracket());
+    expect(c.querySelector(".bm-when")).toBeNull();
+  });
+
+  it("shows a kickoff caption per match when showTimes is true", () => {
+    const c = document.createElement("div");
+    renderFullBracket(c, sampleBracket(), true);
+    const when = c.querySelector('[data-match="73"] .bm-when');
+    expect(when).toBeTruthy();
+    expect(when!.textContent).toContain("·");
+    // Every match gets a caption, not just the first — guards the forwarding
+    // of showTimes through columnEl. sampleBracket() has two matches.
+    expect(c.querySelectorAll(".bm-when")).toHaveLength(2);
+  });
+
+  it("shows a caption on the final match too when showTimes is true", () => {
+    // The final renders via finalColumn, a separate path from sideEl/columnEl.
+    // matchday 9 → the final game (id 104).
+    const games = [
+      ko("104", 9, "0", "0", { kickoff: new Date(2026, 6, 19, 15, 0) }),
+    ];
+    const bracket = buildBracket(games, [], new Date(2026, 6, 1, 18, 0));
+    const c = document.createElement("div");
+    renderFullBracket(c, bracket, true);
+    const finalBox = c.querySelector('[data-match="104"].final-box');
+    expect(finalBox).toBeTruthy();
+    expect(finalBox!.querySelector(".bm-when")).toBeTruthy();
+  });
 });
 
 describe("renderFocusedBracket", () => {
@@ -135,5 +170,17 @@ describe("renderFocusedBracket", () => {
     renderFocusedBracket(c, focusBracket(), 0);
     renderFocusedBracket(c, focusBracket(), 1);
     expect(c.querySelectorAll(".bfocus-main")).toHaveLength(1);
+  });
+});
+
+describe("kickoffCaption", () => {
+  it("formats month, day, and time joined by a middle dot", () => {
+    // Force a fixed locale so the assertion is deterministic.
+    const d = new Date(2026, 6, 4, 14, 0); // Jul 4 2026, 14:00 local
+    const caption = kickoffCaption(d, "en-GB");
+    expect(caption).toContain("Jul");
+    expect(caption).toContain("4");
+    expect(caption).toContain("·");
+    expect(caption).toMatch(/\d/); // contains a time digit
   });
 });

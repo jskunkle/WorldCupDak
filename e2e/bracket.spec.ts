@@ -212,3 +212,21 @@ test("rotate cycles between views on the interval", async ({ page }) => {
   });
   await expect(page.locator("#groups")).toBeHidden();
 });
+
+test("view=bracket&bracketTimes=on shows kickoff captions on the full bracket", async ({
+  page,
+}) => {
+  await mockApi(page);
+  await page.goto("/?view=bracket&bracketTimes=on");
+  await expect(page.locator('[data-round="r32"]').first()).toBeVisible();
+  await expect(page.locator(".bm-when").first()).toBeVisible();
+});
+
+test("the full bracket hides kickoff captions by default", async ({ page }) => {
+  await mockApi(page);
+  await page.goto("/?view=bracket");
+  // Wait for the bracket to actually render before asserting absence, so the
+  // zero-count can't pass just because nothing has painted yet.
+  await expect(page.locator('[data-round="r32"]').first()).toBeVisible();
+  await expect(page.locator(".bm-when")).toHaveCount(0);
+});

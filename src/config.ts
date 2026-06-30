@@ -16,6 +16,7 @@ export interface DashboardConfig {
   fit: boolean;
   view: "auto" | "standings" | "bracket";
   bracket: "full" | "focused";
+  bracketTimes: boolean; // show kickoff date/time under each full-bracket match
   rotate: RotateView[]; // empty = rotation off
   rotateSecs: number; // interval between rotation steps
 }
@@ -34,6 +35,7 @@ const DEFAULTS: DashboardConfig = {
   fit: true,
   view: "auto",
   bracket: "full",
+  bracketTimes: false,
   rotate: [],
   rotateSecs: 120,
 };
@@ -115,6 +117,7 @@ export function parseConfig(search: string): DashboardConfig {
           ? "bracket"
           : "auto",
     bracket: p.get("bracket") === "focused" ? "focused" : "full",
+    bracketTimes: p.get("bracketTimes") === "on",
     rotate: rotateList(p.get("rotate")),
     rotateSecs,
   };

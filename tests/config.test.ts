@@ -17,6 +17,7 @@ describe("parseConfig", () => {
       fit: true,
       view: "auto",
       bracket: "full",
+      bracketTimes: false,
       rotate: [],
       rotateSecs: 120,
     });
@@ -84,6 +85,13 @@ describe("parseConfig", () => {
   it("disables fit only on fit=off", () => {
     expect(parseConfig("?fit=off").fit).toBe(false);
     expect(parseConfig("?fit=on").fit).toBe(true);
+  });
+
+  it("parses bracketTimes=on as true, anything else as false", () => {
+    expect(parseConfig("?bracketTimes=on").bracketTimes).toBe(true);
+    expect(parseConfig("?bracketTimes=off").bracketTimes).toBe(false);
+    expect(parseConfig("?bracketTimes=1").bracketTimes).toBe(false);
+    expect(parseConfig("").bracketTimes).toBe(false);
   });
 
   it("ignores unknown params", () => {
