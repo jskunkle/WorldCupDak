@@ -25,7 +25,10 @@ computed client-side. See `README.md` for URL params and deploy.
   handler serves KV with CORS locked to the Render origin. Primary source
   worldcup26.ir, fallback football-data.org (token is a Worker secret). Each
   source is a `Source` adapter (`worker/sources/`) that normalizes to the domain
-  types in `src/types.ts`.
+  types in `src/types.ts`. worldcup26 `local_date` is venue-local wall-clock time; the adapter converts it
+  to a true UTC instant via a static stadium-id→IANA-timezone map
+  (`worker/sources/stadium-timezones.ts`), so the Worker's UTC runtime does not
+  skew kickoff times. football-data uses `utcDate` directly.
 
 ## Commands
 

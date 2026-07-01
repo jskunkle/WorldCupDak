@@ -22,6 +22,7 @@ NODE="C:/Users/shane/AppData/Local/mise/installs/node/22.22.2/node.exe"
 ### Task 1: Stadium timezone module + wall-clock→UTC helper
 
 **Files:**
+
 - Create: `worker/sources/stadium-timezones.ts`
 - Test: `worker/sources/stadium-timezones.test.ts`
 
@@ -60,11 +61,25 @@ describe("zonedWallTimeToUtc", () => {
     ).toBe("2026-07-01T17:00:00.000Z");
     // noon Mexico City (UTC-6, no DST) -> 18:00Z
     expect(
-      zonedWallTimeToUtc(2026, 7, 1, 12, 0, "America/Mexico_City").toISOString(),
+      zonedWallTimeToUtc(
+        2026,
+        7,
+        1,
+        12,
+        0,
+        "America/Mexico_City",
+      ).toISOString(),
     ).toBe("2026-07-01T18:00:00.000Z");
     // noon PDT (UTC-7) -> 19:00Z
     expect(
-      zonedWallTimeToUtc(2026, 7, 1, 12, 0, "America/Los_Angeles").toISOString(),
+      zonedWallTimeToUtc(
+        2026,
+        7,
+        1,
+        12,
+        0,
+        "America/Los_Angeles",
+      ).toISOString(),
     ).toBe("2026-07-01T19:00:00.000Z");
   });
 });
@@ -168,6 +183,7 @@ git commit -m "feat(worker): add stadium timezone map and zoned wall-clock helpe
 ### Task 2: Wire venue timezone into worldcup26 kickoff parsing
 
 **Files:**
+
 - Modify: `src/types.ts` (add `stadium_id` to `RawGame`)
 - Modify: `worker/sources/worldcup26.ts` (`parseKickoff`, `normalizeGames`)
 - Test: `worker/sources/worldcup26.test.ts`
@@ -203,30 +219,31 @@ Replace the three machine-timezone-dependent kickoff assertions in the
 "coerces strings to numbers/booleans and parses the date" test:
 
 ```ts
-    expect(g.kickoff.getFullYear()).toBe(2026);
-    expect(g.kickoff.getMonth()).toBe(5);
-    expect(g.kickoff.getDate()).toBe(11);
+expect(g.kickoff.getFullYear()).toBe(2026);
+expect(g.kickoff.getMonth()).toBe(5);
+expect(g.kickoff.getDate()).toBe(11);
 ```
 
 with a single deterministic assertion (Azteca 13:00 CST, UTC-6 -> 19:00Z):
 
 ```ts
-    expect(g.kickoff.toISOString()).toBe("2026-06-11T19:00:00.000Z");
+expect(g.kickoff.toISOString()).toBe("2026-06-11T19:00:00.000Z");
 ```
 
 Then add a new test that pins the venue-specific conversion:
 
 ```ts
-  it("converts local_date using the venue's timezone", () => {
-    const byStadium = (stadium_id: string, local_date: string) =>
-      normalizeGames([{ ...finishedGame, stadium_id, local_date }])[0].kickoff
-        .toISOString();
-    // noon local at each venue -> correct UTC instant
-    expect(byStadium("7", "07/01/2026 12:00")).toBe("2026-07-01T16:00:00.000Z"); // Atlanta EDT
-    expect(byStadium("4", "07/01/2026 12:00")).toBe("2026-07-01T17:00:00.000Z"); // Dallas CDT
-    expect(byStadium("1", "07/01/2026 12:00")).toBe("2026-07-01T18:00:00.000Z"); // Mexico City
-    expect(byStadium("16", "07/01/2026 12:00")).toBe("2026-07-01T19:00:00.000Z"); // LA PDT
-  });
+it("converts local_date using the venue's timezone", () => {
+  const byStadium = (stadium_id: string, local_date: string) =>
+    normalizeGames([
+      { ...finishedGame, stadium_id, local_date },
+    ])[0].kickoff.toISOString();
+  // noon local at each venue -> correct UTC instant
+  expect(byStadium("7", "07/01/2026 12:00")).toBe("2026-07-01T16:00:00.000Z"); // Atlanta EDT
+  expect(byStadium("4", "07/01/2026 12:00")).toBe("2026-07-01T17:00:00.000Z"); // Dallas CDT
+  expect(byStadium("1", "07/01/2026 12:00")).toBe("2026-07-01T18:00:00.000Z"); // Mexico City
+  expect(byStadium("16", "07/01/2026 12:00")).toBe("2026-07-01T19:00:00.000Z"); // LA PDT
+});
 ```
 
 - [ ] **Step 2: Run tests to verify they fail**
@@ -241,8 +258,8 @@ no `stadium_id` yet (type error).
 In `src/types.ts`, inside `interface RawGame`, add the field after `local_date`:
 
 ```ts
-  local_date: string;
-  stadium_id: string;
+local_date: string;
+stadium_id: string;
 ```
 
 - [ ] **Step 4: Update `worldcup26.ts` to use the venue timezone**
@@ -293,6 +310,7 @@ git commit -m "fix(worker): parse worldcup26 kickoff in the venue's timezone"
 ### Task 3: Full verification, docs, format
 
 **Files:**
+
 - Modify: `worker/sources/worldcup26.ts` (doc comment only, if needed)
 - Modify: `CLAUDE.md` (architecture note)
 
@@ -304,9 +322,11 @@ Expected: PASS — all suites green (worker + client).
 - [ ] **Step 2: Full build typecheck (matches Render)**
 
 Run:
+
 ```bash
 "$NODE" node_modules/typescript/bin/tsc && "$NODE" node_modules/vite/bin/vite.js build
 ```
+
 Expected: type-check clean, build succeeds to `dist/`.
 
 - [ ] **Step 3: Add an architecture note to `CLAUDE.md`**

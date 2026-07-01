@@ -9,6 +9,7 @@
 **Tech Stack:** TypeScript, Vite, Vitest. No data/Worker changes — `BracketMatch.kickoff` already exists.
 
 **Test runner note:** the `mise` shims are broken in tool shells on this machine. Run vitest via the real node binary:
+
 ```bash
 NODE="C:/Users/shane/AppData/Local/mise/installs/node/22.22.2/node.exe"
 "$NODE" node_modules/vitest/vitest.mjs run [path]
@@ -19,6 +20,7 @@ NODE="C:/Users/shane/AppData/Local/mise/installs/node/22.22.2/node.exe"
 ### Task 1: Parse `bracketTimes` config
 
 **Files:**
+
 - Modify: `src/config.ts` (interface `DashboardConfig`, `DEFAULTS`, `parseConfig` return)
 - Test: `tests/config.test.ts`
 
@@ -34,12 +36,12 @@ Add to `tests/config.test.ts`. First, add `bracketTimes: false` to the empty-str
 Then add a new test inside the `describe("parseConfig", ...)` block:
 
 ```ts
-  it("parses bracketTimes=on as true, anything else as false", () => {
-    expect(parseConfig("?bracketTimes=on").bracketTimes).toBe(true);
-    expect(parseConfig("?bracketTimes=off").bracketTimes).toBe(false);
-    expect(parseConfig("?bracketTimes=1").bracketTimes).toBe(false);
-    expect(parseConfig("").bracketTimes).toBe(false);
-  });
+it("parses bracketTimes=on as true, anything else as false", () => {
+  expect(parseConfig("?bracketTimes=on").bracketTimes).toBe(true);
+  expect(parseConfig("?bracketTimes=off").bracketTimes).toBe(false);
+  expect(parseConfig("?bracketTimes=1").bracketTimes).toBe(false);
+  expect(parseConfig("").bracketTimes).toBe(false);
+});
 ```
 
 - [ ] **Step 2: Run tests to verify they fail**
@@ -52,8 +54,8 @@ Expected: FAIL — `bracketTimes` is missing from the parsed config (the default
 In `src/config.ts`, add to the `DashboardConfig` interface after the `bracket` line:
 
 ```ts
-  bracket: "full" | "focused";
-  bracketTimes: boolean; // show kickoff date/time under each full-bracket match
+bracket: "full" | "focused";
+bracketTimes: boolean; // show kickoff date/time under each full-bracket match
 ```
 
 Add to `DEFAULTS` after the `bracket: "full",` line:
@@ -87,6 +89,7 @@ git commit -m "feat(config): add bracketTimes opt-in param"
 ### Task 2: `kickoffCaption` formatter
 
 **Files:**
+
 - Modify: `src/render-bracket.ts` (new exported function)
 - Test: `tests/render-bracket.test.ts`
 
@@ -158,6 +161,7 @@ git commit -m "feat(bracket): add kickoffCaption formatter"
 ### Task 3: Render the caption in the full bracket
 
 **Files:**
+
 - Modify: `src/render-bracket.ts` (`matchEl`, `columnEl`, `finalColumn`, `sideEl`, `renderFullBracket`)
 - Test: `tests/render-bracket.test.ts`
 
@@ -168,19 +172,19 @@ The flag has to reach `matchEl`, which is called from `columnEl`, `finalColumn`,
 Add two tests to the `describe("renderFullBracket", ...)` block in `tests/render-bracket.test.ts`:
 
 ```ts
-  it("omits kickoff captions by default", () => {
-    const c = document.createElement("div");
-    renderFullBracket(c, sampleBracket());
-    expect(c.querySelector(".bm-when")).toBeNull();
-  });
+it("omits kickoff captions by default", () => {
+  const c = document.createElement("div");
+  renderFullBracket(c, sampleBracket());
+  expect(c.querySelector(".bm-when")).toBeNull();
+});
 
-  it("shows a kickoff caption per match when showTimes is true", () => {
-    const c = document.createElement("div");
-    renderFullBracket(c, sampleBracket(), true);
-    const when = c.querySelector('[data-match="73"] .bm-when');
-    expect(when).toBeTruthy();
-    expect(when!.textContent).toContain("·");
-  });
+it("shows a kickoff caption per match when showTimes is true", () => {
+  const c = document.createElement("div");
+  renderFullBracket(c, sampleBracket(), true);
+  const when = c.querySelector('[data-match="73"] .bm-when');
+  expect(when).toBeTruthy();
+  expect(when!.textContent).toContain("·");
+});
 ```
 
 - [ ] **Step 2: Run tests to verify they fail**
@@ -316,6 +320,7 @@ git commit -m "feat(bracket): render kickoff captions when showTimes is set"
 ### Task 4: Wire config into the renderer + style the caption
 
 **Files:**
+
 - Modify: `src/main.ts:155` (the `renderFullBracket` call)
 - Modify: `src/styles.css` (add `.bm-when` rule after the `.bm.live .bm-score` block, ~line 333)
 
@@ -326,9 +331,9 @@ No new unit test — this is runtime wiring (smoke-tested) and CSS. Verified by 
 In `src/main.ts`, change the full-bracket render call inside `paintBracket`:
 
 ```ts
-    stopFocusRotation();
-    renderFullBracket(bracketEl, bracket, config.bracketTimes);
-    if (config.fit) fitBracket(appEl);
+stopFocusRotation();
+renderFullBracket(bracketEl, bracket, config.bracketTimes);
+if (config.fit) fitBracket(appEl);
 ```
 
 - [ ] **Step 2: Add the CSS rule**
@@ -350,10 +355,12 @@ In `src/styles.css`, after the `.bm.live .bm-score { ... }` block (ends ~line 33
 - [ ] **Step 3: Typecheck and build (matches the Render deploy)**
 
 Run:
+
 ```bash
 NODE="C:/Users/shane/AppData/Local/mise/installs/node/22.22.2/node.exe"
 "$NODE" node_modules/typescript/bin/tsc && "$NODE" node_modules/vite/bin/vite.js build
 ```
+
 Expected: no type errors; build succeeds.
 
 - [ ] **Step 4: Commit**
@@ -368,6 +375,7 @@ git commit -m "feat(bracket): wire bracketTimes into the full bracket render + s
 ### Task 5: E2E coverage
 
 **Files:**
+
 - Modify: `e2e/bracket.spec.ts`
 
 Reuse the existing bracket e2e setup (it already mocks the API — see the CORS-locked note; do not hit the live Worker). Add a test that loads the full bracket with `?bracketTimes=on` and asserts a `.bm-when` caption appears, plus one asserting it is absent without the param.
@@ -413,6 +421,7 @@ git commit -m "test(bracket): e2e for bracketTimes caption visibility"
 ### Task 6: Document the param + final checks
 
 **Files:**
+
 - Modify: `README.md` (the URL-params table, after the `rotateSecs` row ~line 55)
 
 - [ ] **Step 1: Add the README row**
@@ -420,12 +429,13 @@ git commit -m "test(bracket): e2e for bracketTimes caption visibility"
 After the `rotateSecs` row in the params table in `README.md`, add:
 
 ```markdown
-| `bracketTimes` | `on` \| `off`                                         | `off`      | Show kickoff date + time under each match in the full bracket view, e.g. `Jul 4 · 14:00` (full bracket only)                                         |
+| `bracketTimes` | `on` \| `off` | `off` | Show kickoff date + time under each match in the full bracket view, e.g. `Jul 4 · 14:00` (full bracket only) |
 ```
 
 - [ ] **Step 2: Format**
 
 Run:
+
 ```bash
 NODE="C:/Users/shane/AppData/Local/mise/installs/node/22.22.2/node.exe"
 "$NODE" node_modules/prettier/bin/prettier.cjs --write .
@@ -434,11 +444,13 @@ NODE="C:/Users/shane/AppData/Local/mise/installs/node/22.22.2/node.exe"
 - [ ] **Step 3: Full test + build pass**
 
 Run:
+
 ```bash
 NODE="C:/Users/shane/AppData/Local/mise/installs/node/22.22.2/node.exe"
 "$NODE" node_modules/vitest/vitest.mjs run
 "$NODE" node_modules/typescript/bin/tsc && "$NODE" node_modules/vite/bin/vite.js build
 ```
+
 Expected: all unit tests PASS; build succeeds.
 
 - [ ] **Step 4: Commit**

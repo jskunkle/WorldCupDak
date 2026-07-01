@@ -88,12 +88,15 @@ describe("normalizeGames", () => {
 
   it("converts local_date using the venue's timezone", () => {
     const byStadium = (stadium_id: string, local_date: string) =>
-      normalizeGames([{ ...finishedGame, stadium_id, local_date }])[0].kickoff
-        .toISOString();
+      normalizeGames([
+        { ...finishedGame, stadium_id, local_date },
+      ])[0].kickoff.toISOString();
     // noon local at each venue -> correct UTC instant
     expect(byStadium("7", "07/01/2026 12:00")).toBe("2026-07-01T16:00:00.000Z"); // Atlanta EDT
     expect(byStadium("4", "07/01/2026 12:00")).toBe("2026-07-01T17:00:00.000Z"); // Dallas CDT
     expect(byStadium("1", "07/01/2026 12:00")).toBe("2026-07-01T18:00:00.000Z"); // Mexico City
-    expect(byStadium("16", "07/01/2026 12:00")).toBe("2026-07-01T19:00:00.000Z"); // LA PDT
+    expect(byStadium("16", "07/01/2026 12:00")).toBe(
+      "2026-07-01T19:00:00.000Z",
+    ); // LA PDT
   });
 });

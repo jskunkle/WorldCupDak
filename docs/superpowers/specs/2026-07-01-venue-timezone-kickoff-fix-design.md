@@ -61,14 +61,14 @@ feed sorting, knockout advancement) improves for free.
 Static map of the 16 stadium ids → IANA zones (ids/cities verified from
 `worldcup26.ir/get/stadiums`):
 
-| Zone | Stadium ids (city) |
-| --- | --- |
-| `America/New_York` | 7 Atlanta, 8 Miami, 9 Boston, 10 Philadelphia, 11 NY/NJ, 12 Toronto |
-| `America/Chicago` | 4 Dallas, 5 Houston, 6 Kansas City |
-| `America/Mexico_City` | 1 Mexico City, 2 Guadalajara |
-| `America/Monterrey` | 3 Monterrey |
-| `America/Los_Angeles` | 14 Seattle, 15 SF Bay Area, 16 Los Angeles |
-| `America/Vancouver` | 13 Vancouver |
+| Zone                  | Stadium ids (city)                                                  |
+| --------------------- | ------------------------------------------------------------------- |
+| `America/New_York`    | 7 Atlanta, 8 Miami, 9 Boston, 10 Philadelphia, 11 NY/NJ, 12 Toronto |
+| `America/Chicago`     | 4 Dallas, 5 Houston, 6 Kansas City                                  |
+| `America/Mexico_City` | 1 Mexico City, 2 Guadalajara                                        |
+| `America/Monterrey`   | 3 Monterrey                                                         |
+| `America/Los_Angeles` | 14 Seattle, 15 SF Bay Area, 16 Los Angeles                          |
+| `America/Vancouver`   | 13 Vancouver                                                        |
 
 - `stadiumTimeZone(id: string): string` — returns the zone; falls back to
   `America/New_York` for an unknown id (all 16 venues are fixed for 2026, so the

@@ -28,11 +28,25 @@ describe("zonedWallTimeToUtc", () => {
     ).toBe("2026-07-01T17:00:00.000Z");
     // noon Mexico City (UTC-6, no DST) -> 18:00Z
     expect(
-      zonedWallTimeToUtc(2026, 7, 1, 12, 0, "America/Mexico_City").toISOString(),
+      zonedWallTimeToUtc(
+        2026,
+        7,
+        1,
+        12,
+        0,
+        "America/Mexico_City",
+      ).toISOString(),
     ).toBe("2026-07-01T18:00:00.000Z");
     // noon PDT (UTC-7) -> 19:00Z
     expect(
-      zonedWallTimeToUtc(2026, 7, 1, 12, 0, "America/Los_Angeles").toISOString(),
+      zonedWallTimeToUtc(
+        2026,
+        7,
+        1,
+        12,
+        0,
+        "America/Los_Angeles",
+      ).toISOString(),
     ).toBe("2026-07-01T19:00:00.000Z");
   });
 });
