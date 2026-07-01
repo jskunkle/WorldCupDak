@@ -1,56 +1,41 @@
 # World Cup 2026 DAKboard — Tasks
 
-Plan: `docs/superpowers/plans/2026-06-29-bracket-kickoff-times.md`
-Spec: `docs/superpowers/specs/2026-06-29-bracket-kickoff-times-design.md`
+Plan: `docs/superpowers/plans/2026-07-01-venue-timezone-kickoff-fix.md`
+Spec: `docs/superpowers/specs/2026-07-01-venue-timezone-kickoff-fix-design.md`
 
-Opt-in `?bracketTimes=on` to show a `Jul 4 · 14:00` kickoff caption under each
-match in the full bracket view. Defaults off. Client-only, no Worker changes.
+Fix the Worker so worldcup26 kickoff times are stored as the correct absolute
+UTC instant, derived from each venue's local timezone. `local_date` is
+venue-local wall-clock time; the current code binds it to the Worker's UTC
+runtime, shifting every kickoff by the venue's offset (e.g. noon EDT shown as
+8 am). Worker-only; no client changes.
 
-## Task 1 — Config: `bracketTimes` param
+## Task 1 — Stadium timezone module + wall-clock→UTC helper (TDD)
 
-- [ ] Add failing tests to `tests/config.test.ts` (defaults literal + on/off/absent)
-- [ ] Verify they fail
-- [ ] Add `bracketTimes` to `DashboardConfig`, `DEFAULTS`, `parseConfig`
-- [ ] Verify they pass
-- [ ] Commit
-
-## Task 2 — `kickoffCaption` formatter (TDD)
-
-- [ ] Write failing `kickoffCaption` test in `tests/render-bracket.test.ts`
-- [ ] Verify it fails
-- [ ] Implement exported `kickoffCaption(date, locale?)` in `src/render-bracket.ts`
+- [ ] Write failing `stadium-timezones.test.ts` (id→zone map + `zonedWallTimeToUtc`)
+- [ ] Verify it fails (module unresolved)
+- [ ] Implement `worker/sources/stadium-timezones.ts` (`stadiumTimeZone`, `zonedWallTimeToUtc`)
 - [ ] Verify it passes
 - [ ] Commit
 
-## Task 3 — Render caption in full bracket (TDD)
+## Task 2 — Wire venue timezone into worldcup26 parsing (TDD)
 
-- [ ] Add failing tests (absent by default; one `.bm-when` per match when on)
-- [ ] Verify they fail
-- [ ] Thread `showTimes` through `matchEl`/`columnEl`/`sideEl`/`finalColumn`/`renderFullBracket`
-- [ ] Verify all bracket tests pass
+- [ ] Add `stadium_id` to `finishedGame` fixture; make kickoff assertion deterministic (`toISOString`)
+- [ ] Add failing venue-conversion test (stadiums 7/4/1/16 at noon local)
+- [ ] Verify they fail (wrong instant + `RawGame` has no `stadium_id`)
+- [ ] Add `stadium_id: string` to `RawGame` in `src/types.ts`
+- [ ] Update `parseKickoff`/`normalizeGames` in `worldcup26.ts` to use the venue zone
+- [ ] Verify tests pass
+- [ ] `tsc --noEmit -p worker/tsconfig.json` clean
 - [ ] Commit
 
-## Task 4 — Wire config + style
+## Task 3 — Full verification, docs, format
 
-- [ ] Pass `config.bracketTimes` in `main.ts` `paintBracket`
-- [ ] Add `.bm-when` rule to `src/styles.css`
-- [ ] `tsc && vite build` clean
-- [ ] Commit
-
-## Task 5 — E2E
-
-- [ ] Add `?bracketTimes=on` shows-caption + default-hidden tests to `e2e/bracket.spec.ts`
-- [ ] Run e2e green
-- [ ] Commit
-
-## Task 6 — Docs + final checks
-
-- [ ] Document `bracketTimes` in `README.md` params table
+- [ ] Full `vitest run` passes (worker + client)
+- [ ] `tsc && vite build` clean (matches Render)
+- [ ] Add venue-timezone note to `CLAUDE.md` architecture section
 - [ ] `prettier --write .`
-- [ ] Full `vitest run` passes; `tsc && vite build` clean
 - [ ] Commit
 
 ## Wrap-up
 
-- [ ] Smoke test `/?view=bracket&bracketTimes=on` and `/?view=bracket`
 - [ ] Push + open PR (when asked)
