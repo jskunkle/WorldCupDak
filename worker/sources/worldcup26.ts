@@ -1,5 +1,6 @@
 import type { RawTeam, RawGame, Team, Game } from "../../src/types";
 import type { Source } from "./source";
+import { stadiumTimeZone, zonedWallTimeToUtc } from "./stadium-timezones";
 
 const BASE_URL = "https://worldcup26.ir";
 
@@ -13,12 +14,12 @@ export function normalizeTeams(raw: RawTeam[]): Team[] {
   }));
 }
 
-// Parses "MM/DD/YYYY HH:mm" as local time.
-function parseKickoff(s: string): Date {
+// Parses "MM/DD/YYYY HH:mm" as a wall-clock time in the venue's timezone.
+function parseKickoff(s: string, timeZone: string): Date {
   const [datePart, timePart = "00:00"] = s.trim().split(" ");
   const [mm, dd, yyyy] = datePart.split("/").map(Number);
   const [hh, min] = timePart.split(":").map(Number);
-  return new Date(yyyy, mm - 1, dd, hh, min);
+  return zonedWallTimeToUtc(yyyy, mm, dd, hh, min, timeZone);
 }
 
 export function normalizeGames(raw: RawGame[]): Game[] {
@@ -32,7 +33,7 @@ export function normalizeGames(raw: RawGame[]): Game[] {
     awayScore: Number(g.away_score) || 0,
     group: g.group,
     matchday: Number(g.matchday) || 0,
-    kickoff: parseKickoff(g.local_date),
+    kickoff: parseKickoff(g.local_date, stadiumTimeZone(g.stadium_id)),
     finished: g.finished === "TRUE",
     isGroupStage: g.type === "group",
     homeLabel: g.home_team_label,

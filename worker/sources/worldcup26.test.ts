@@ -20,6 +20,7 @@ const finishedGame: RawGame = {
   group: "A",
   matchday: "1",
   local_date: "06/11/2026 13:00",
+  stadium_id: "1",
   finished: "TRUE",
   time_elapsed: "finished",
   type: "group",
@@ -49,9 +50,7 @@ describe("normalizeGames", () => {
     expect(g.finished).toBe(true);
     expect(g.isGroupStage).toBe(true);
     expect(g.matchday).toBe(1);
-    expect(g.kickoff.getFullYear()).toBe(2026);
-    expect(g.kickoff.getMonth()).toBe(5);
-    expect(g.kickoff.getDate()).toBe(11);
+    expect(g.kickoff.toISOString()).toBe("2026-06-11T19:00:00.000Z");
   });
 
   it("treats finished other than 'TRUE' as not finished", () => {
@@ -85,5 +84,16 @@ describe("normalizeGames", () => {
     ]);
     expect(g.homeScore).toBe(0);
     expect(g.awayScore).toBe(0);
+  });
+
+  it("converts local_date using the venue's timezone", () => {
+    const byStadium = (stadium_id: string, local_date: string) =>
+      normalizeGames([{ ...finishedGame, stadium_id, local_date }])[0].kickoff
+        .toISOString();
+    // noon local at each venue -> correct UTC instant
+    expect(byStadium("7", "07/01/2026 12:00")).toBe("2026-07-01T16:00:00.000Z"); // Atlanta EDT
+    expect(byStadium("4", "07/01/2026 12:00")).toBe("2026-07-01T17:00:00.000Z"); // Dallas CDT
+    expect(byStadium("1", "07/01/2026 12:00")).toBe("2026-07-01T18:00:00.000Z"); // Mexico City
+    expect(byStadium("16", "07/01/2026 12:00")).toBe("2026-07-01T19:00:00.000Z"); // LA PDT
   });
 });

@@ -17,6 +17,7 @@ export interface RawGame {
   group: string;
   matchday: string;
   local_date: string;
+  stadium_id: string;
   finished: string; // "TRUE" | "FALSE"
   time_elapsed: string;
   type: string; // "group" for group-stage matches
